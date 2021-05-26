@@ -1,0 +1,7 @@
+name = "NumDisplay"
+uuid = "81312ecf-b97b-400a-930d-c253b7f54345"
+authors = ["Evgeny Metelkin <metelkin@insysbio.com>"]
+version = "0.1.0"
+
+[deps]
+PiGPIOC = "30a511cb-78f8-4457-8440-9b2c99933694"

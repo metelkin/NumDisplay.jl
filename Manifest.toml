@@ -1,0 +1,8 @@
+# This file is machine-generated - editing it directly is not advised
+
+[[PiGPIOC]]
+git-tree-sha1 = "70b2300a384486230eb14c0479e7adef28f78270"
+repo-rev = "master"
+repo-url = "https://github.com/notinaboat/PiGPIOC.jl"
+uuid = "30a511cb-78f8-4457-8440-9b2c99933694"
+version = "0.1.0"
