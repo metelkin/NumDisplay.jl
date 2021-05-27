@@ -1,4 +1,5 @@
-push!(LOAD_PATH,"Y:/_raspberry/") # for local run
+# push!(LOAD_PATH,"Y:/_raspberry/") # for local run
+push!(LOAD_PATH,"../")
 
 using Documenter, NumDisplay
 
