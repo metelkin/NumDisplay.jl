@@ -3,7 +3,7 @@ module NumDisplay
 using PiGPIOC
 
 export DisplayBCD
-export write_digit, write_number, update, clean, stop
+export write_digit, write_dp, write_number, update, clean, stop
 export NO_DIGIT
 
 include("abstract-num-display.jl")

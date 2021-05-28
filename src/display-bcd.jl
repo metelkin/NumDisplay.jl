@@ -1,4 +1,3 @@
-const DEFAULT_FREQ = 1000 # 1 kHz
 const NO_DIGIT = 0b1111
 
 #=
@@ -13,43 +12,55 @@ gpioWaveTxStop
 =#
 
 """
+    struct DisplayBCD <: AbstractNumDisplay
+        sectors_pins::AbstractVector{Int}   # pin numbers starting from less significant
+        input_pins::Tuple{Int,Int,Int,Int}  # pin numbers for binary code starting from less significant
+        dp_pin::Union{Int, Nothing}         # pin changing dot state
+        buffer::AbstractVector{UInt8}       # internal storage of digits values
+        dp_buffer::AbstractVector{UInt8}
+        usDelay::Int                        # duration of period when sector is on
+    end
+"""
+struct DisplayBCD <: AbstractNumDisplay
+    sectors_pins::AbstractVector{Int}
+    input_pins::Tuple{Int,Int,Int,Int}
+    dp_pin::Union{Int, Nothing}
+    buffer::AbstractVector{UInt8}
+    dp_buffer::AbstractVector{UInt8}
+    usDelay::Int
+end
+
+"""
     function DisplayBCD(
-        digits_pins::AbstractVector{Int},
-        input_pins::Tuple{Int,Int,Int,Int};
-        fps::Int = DEFAULT_FREQ
+        sectors_pins::AbstractVector{Int},
+        input_pins::Tuple{Int,Int,Int,Int},
+        dp_pin::Union{Int, Nothing} = nothing;
+        fps::Int = 1000
     )
 
 Creates device representing numerical display with several digits under control of the BCD chip.
-The number of display digits equal to `digits_pins` count.
+The number of display digits equal to `sectors_pins` count.
 
 ## Arguments
 
-- digits_pins : Vector of GPIO pin numbers connected to anode. The HIGH state means the digit is on. LOW means off.
+- sectors_pins : Vector of GPIO pin numbers connected to anode. The HIGH state means the digit is on. LOW means off.
     The first pin in array should manage the less significant digit.
 
 - input_pins : Tuple consisting of GPIO numbers representing the 4-bit code of a digit.
     The first pin in tuple is less significant number.
 
-- fps : frame rate (frames per second). The digits in display are controlled by impulses of `digits_pins`. 
+- dp_pin : Number of pin connected to dot LED (DP)
+
+- fps : frame rate (frames per second). The digits in display are controlled by impulses of `sectors_pins`. 
     This argument sets the width of one impuls. 
     If `fps=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is `1000` Hz.
 """
-struct DisplayBCD <: AbstractNumDisplay
-    digits_pins::AbstractVector{Int} # number of pin starting from less significant
-    input_pins::Tuple{Int,Int,Int,Int} # binary code of digit starting from less significant
-    # dp_pin::Union{Int, Nothing} # xxx: not used
-    # digits_inverse::Bool # xxx: not used
-    buffer::AbstractVector{UInt8}
-    usDelay::Int
-end
-
 function DisplayBCD(
-    digits_pins::AbstractVector{Int},
-    input_pins::Tuple{Int,Int,Int,Int};
-    #dp_pin::Union{Int, Nothing} = nothing,
-    #digits_inverse::Bool = false,
-    fps::Int = DEFAULT_FREQ # Hz
+    sectors_pins::AbstractVector{Int},
+    input_pins::Tuple{Int,Int,Int,Int},
+    dp_pin::Union{Int, Nothing} = nothing;
+    fps::Int = 1000 # Hz
 )
     if PiGPIOC.gpioInitialise() < 0
         throw("pigpio initialisation failed.")
@@ -64,8 +75,8 @@ function DisplayBCD(
     # TODO: check lower frequency, gpioWaveGetMaxMicros()
 
     # init pins
-    PiGPIOC.gpioSetMode.(digits_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(digits_pins, 0)
+    PiGPIOC.gpioSetMode.(sectors_pins, PiGPIOC.PI_OUTPUT)
+    PiGPIOC.gpioWrite.(sectors_pins, 0)
     PiGPIOC.gpioSetMode.(input_pins, PiGPIOC.PI_OUTPUT)
     PiGPIOC.gpioWrite.(input_pins, 0)
     if dp_pin !== nothing
@@ -73,9 +84,10 @@ function DisplayBCD(
         PiGPIOC.gpioWrite(dp_pin, 0)
     end
 
-    buffer = fill(NO_DIGIT, length(digits_pins)) # set empty display
+    buffer = fill(NO_DIGIT, length(sectors_pins)) # set empty display
+    dp_buffer = fill(0b0, length(sectors_pins)) # set all false
 
-    DisplayBCD(digits_pins, input_pins, buffer, usDelay)
+    DisplayBCD(sectors_pins, input_pins, dp_pin, buffer, dp_buffer, usDelay)
 end
 
 """
@@ -101,13 +113,26 @@ Writes the digit to the position. The result of the execution is changing one di
 """
 function write_digit(
     indicator::DisplayBCD,
-    digit::Union{UInt8, Nothing}, # digit from 0 to 9
+    value::Union{UInt8, Nothing}, # digit from 0 to 9
     position::Int # starting from less signifacant
 )
-    @assert 0 <= digit <= 15 "digit must be in range [0...15], got $digit"
-    @assert 1 <= position <= length(indicator.digits_pins) "position must be in range [1...$(length(indicator.digits_pins))], got , got $position"
+    @assert 0 <= value <= 15 "value must be in range [0...15], got $digit"
+    @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"
 
-    indicator.buffer[position] = digit !== nothing ? digit : NO_DIGIT
+    indicator.buffer[position] = value !== nothing ? value : NO_DIGIT
+
+    update(indicator)
+end
+
+function write_dp(
+    indicator::DisplayBCD,
+    value::UInt8,
+    position::Int # starting from less signifacant
+)
+    @assert 0 <= value <= 1 "value must be 0 or 1, got $digit"
+    @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"
+
+    indicator.dp_buffer[position] = value
 
     update(indicator)
 end
@@ -115,7 +140,8 @@ end
 """
     function write_number(
         indicator::DisplayBCD,
-        digit_vector::AbstractArray{D}
+        digit_vector::AbstractArray{D},
+        dp_position::Union(Int,Nothing) = nothing
     ) where D <: Union{UInt8, Nothing}
 
 Writes several digits to the positions. The result of the execution is updating the whole number.
@@ -128,6 +154,7 @@ If `digit_vector` is shorter than number of sectors the rest sectors will be emp
 - digit_vector : vector of decimal values from 0 to 9 or `nothing`. The same meaning as `digit` in `write_digit()`.
     The first element of vector will be writte to the less significant sector, etc.
 
+- dp_position : position of dot in display
 ## Example
 
 ```
@@ -145,11 +172,17 @@ write_number(d, [1,2,3,4,5,6])
 function write_number(
     indicator::DisplayBCD,
     digit_vector::AbstractArray{D}, # digit from 0 to 9
+    dp_position::Union{Int, Nothing} = nothing
 ) where D <: Union{UInt8, Nothing}
     # TODO: check digit_vector
     l = length(digit_vector)
-    for i in 1:length(indicator.digits_pins)
+    for i in 1:length(indicator.sectors_pins)
         indicator.buffer[i] = (i <= l && digit_vector[i] !== nothing) ? digit_vector[i] : NO_DIGIT
+    end
+
+    fill!(indicator.dp_buffer, 0b0)
+    if dp_position !== nothing && 1 <= dp_position <= length(indicator.sectors_pins)
+        indicator.dp_buffer[dp_position] = 0b1
     end
 
     update(indicator)
@@ -158,7 +191,8 @@ end
 """
     write_number(
         indicator::DisplayBCD,
-        number::Int
+        number::Int,
+        dp_position::Union{Int, Nothing} = nothing
     )
 
 Writes the decimal value to the display.
@@ -185,15 +219,16 @@ write_number(d, 12345)
 """
 function write_number(
     indicator::DisplayBCD,
-    number::Int
+    number::Int,
+    dp_position::Union{Int, Nothing} = nothing
 )
-    indicator_len = length(indicator.digits_pins)
+    indicator_len = length(indicator.sectors_pins)
 
     @assert 0 <= number < 10^indicator_len "number $number cannot be displayed on $indicator_len indicator"   
 
     digit_vector = UInt8.(digits(number))
 
-    write_number(indicator, digit_vector)
+    write_number(indicator, digit_vector, dp_position)
 end
 
 """
@@ -208,7 +243,7 @@ This function is used internaly by `write...` methods to update the display.
 
 """
 function update(indicator::DisplayBCD)
-    digits_count = length(indicator.digits_pins)
+    digits_count = length(indicator.sectors_pins)
 
     # create new wave based on indicator.buffer
     # number of pulses is equal to digits_count
@@ -218,9 +253,9 @@ function update(indicator::DisplayBCD)
         gpioOff = 0
         for j in 1:digits_count
             if i == j
-                gpioOn |= 1 << indicator.digits_pins[j]
+                gpioOn |= 1 << indicator.sectors_pins[j]
             else
-                gpioOff |= 1 << indicator.digits_pins[j]
+                gpioOff |= 1 << indicator.sectors_pins[j]
             end
         end
 
@@ -282,6 +317,7 @@ Display empty sectors.
 """
 function clean(indicator::DisplayBCD)
     fill!(indicator.buffer, NO_DIGIT)
+    fill!(indicator.dp_buffer, 0b0)
     update(indicator)
 end
 
@@ -303,9 +339,10 @@ function stop(indicator::DisplayBCD)
 
     # clear buffer
     fill!(indicator.buffer, NO_DIGIT)
+    fill!(indicator.dp_buffer, 0b0)
 
     # clear pins
-    PiGPIOC.gpioWrite.(indicator.digits_pins, 0)
+    PiGPIOC.gpioWrite.(indicator.sectors_pins, 0)
     PiGPIOC.gpioWrite.(indicator.input_pins, 0)
     if indicator.dp_pin !== nothing
         PiGPIOC.gpioWrite(indicator.dp_pin, 0)
