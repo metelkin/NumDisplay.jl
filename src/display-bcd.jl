@@ -12,11 +12,34 @@ gpioWaveDelete
 gpioWaveTxStop
 =#
 
+"""
+    function DisplayBCD(
+        digits_pins::AbstractVector{Int},
+        input_pins::Tuple{Int,Int,Int,Int};
+        fps::Int = DEFAULT_FREQ
+    )
+
+Creates device representing numerical display with several digits under control of the BCD chip.
+The number of display digits equal to `digits_pins` count.
+
+## Arguments
+
+- digits_pins : Vector of GPIO pin numbers connected to anode. The HIGH state means the digit is on. LOW means off.
+    The first pin in array should manage the less significant digit.
+
+- input_pins : Tuple consisting of GPIO numbers representing the 4-bit code of a digit.
+    The first pin in tuple is less significant number.
+
+- fps : frame rate (frames per second). The digits in display are controlled by impulses of `digits_pins`. 
+    This argument sets the width of one impuls. 
+    If `fps=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
+    The default value is `1000` Hz.
+"""
 struct DisplayBCD <: AbstractNumDisplay
     digits_pins::AbstractVector{Int} # number of pin starting from less significant
     input_pins::Tuple{Int,Int,Int,Int} # binary code of digit starting from less significant
-    dp_pin::Union{Int, Nothing} # xxx: not used
-    digits_inverse::Bool # xxx: not used
+    # dp_pin::Union{Int, Nothing} # xxx: not used
+    # digits_inverse::Bool # xxx: not used
     buffer::AbstractVector{UInt8}
     usDelay::Int
 end
@@ -24,8 +47,8 @@ end
 function DisplayBCD(
     digits_pins::AbstractVector{Int},
     input_pins::Tuple{Int,Int,Int,Int};
-    dp_pin::Union{Int, Nothing} = nothing,
-    digits_inverse::Bool = false,
+    #dp_pin::Union{Int, Nothing} = nothing,
+    #digits_inverse::Bool = false,
     fps::Int = DEFAULT_FREQ # Hz
 )
     if PiGPIOC.gpioInitialise() < 0
@@ -52,9 +75,30 @@ function DisplayBCD(
 
     buffer = fill(NO_DIGIT, length(digits_pins)) # set empty display
 
-    DisplayBCD(digits_pins, input_pins, dp_pin, digits_inverse, buffer, usDelay)
+    DisplayBCD(digits_pins, input_pins, buffer, usDelay)
 end
 
+"""
+    function write_digit(
+        indicator::DisplayBCD,
+        digit::Union{UInt8, Nothing},
+        position::Int
+    )
+
+Writes the digit to the position. The result of the execution is changing one digit in a particular sector. 
+
+## Arguments
+
+- indicator : object representing display device
+
+- digit : decimal value from 0 to 9 or `nothing`. The last means an empty sector.
+        Values from 10 to 14 are also possible here but results to miningless symbols.
+        Value 15 means an empty sector and it is the same as `nothing`.
+
+- position : number of sector to write starting from 1 which mean less signifacant digit.
+        The maximal value depends on available sectors, so it should be `<= length(indicator.digit_pins)`
+ 
+"""
 function write_digit(
     indicator::DisplayBCD,
     digit::Union{UInt8, Nothing}, # digit from 0 to 9
@@ -68,6 +112,36 @@ function write_digit(
     update(indicator)
 end
 
+"""
+    function write_number(
+        indicator::DisplayBCD,
+        digit_vector::AbstractArray{D}
+    ) where D <: Union{UInt8, Nothing}
+
+Writes several digits to the positions. The result of the execution is updating the whole number.
+If `digit_vector` is shorter than number of sectors the rest sectors will be empty.
+
+## Arguments
+
+- indicator : object representing display device
+
+- digit_vector : vector of decimal values from 0 to 9 or `nothing`. The same meaning as `digit` in `write_digit()`.
+    The first element of vector will be writte to the less significant sector, etc.
+
+## Example
+
+```
+# d is 4-digit (sector) display
+write_number(d, [1,2])
+# the result is __321
+
+write_number(d, [1,2,3,4])
+# the result is 4321
+
+write_number(d, [1,2,3,4,5,6])
+# the result is 4321
+```
+"""
 function write_number(
     indicator::DisplayBCD,
     digit_vector::AbstractArray{D}, # digit from 0 to 9
@@ -81,6 +155,34 @@ function write_number(
     update(indicator)
 end
 
+"""
+    write_number(
+        indicator::DisplayBCD,
+        number::Int
+    )
+
+Writes the decimal value to the display.
+
+## Arguments
+
+- indicator : object representing display device
+
+- number : decimal number. The maximal possible value depends on number of sectors and will be checked.
+
+## Example
+
+```
+# d is 4-digit (sector) display
+write_number(d, 123)
+# the result is _123
+
+write_number(d, 1234)
+# the result is 1234
+
+write_number(d, 12345)
+# throws an error
+```
+"""
 function write_number(
     indicator::DisplayBCD,
     number::Int
@@ -94,6 +196,17 @@ function write_number(
     write_number(indicator, digit_vector)
 end
 
+"""
+    update(indicator::DisplayBCD)
+
+Show the content of `indicator.buffer` to the display.
+This function is used internaly by `write...` methods to update the display.
+
+## Arguments
+
+- indicator : object representing display device
+
+"""
 function update(indicator::DisplayBCD)
     digits_count = length(indicator.digits_pins)
 
@@ -157,11 +270,31 @@ function update(indicator::DisplayBCD)
     return nothing
 end
 
+"""
+    clean(indicator::DisplayBCD)
+
+Display empty sectors.
+
+## Arguments
+
+- indicator : object representing display device
+
+"""
 function clean(indicator::DisplayBCD)
     fill!(indicator.buffer, NO_DIGIT)
     update(indicator)
 end
 
+"""
+    stop(indicator::DisplayBCD)
+
+Stop device and reset the the initial state.
+
+## Arguments
+
+- indicator : object representing display device
+
+"""
 function stop(indicator::DisplayBCD)
     # stop wave
     # current_wave = PiGPIOC.gpioWaveTxAt()
