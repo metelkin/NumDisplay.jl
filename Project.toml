@@ -1,6 +1,6 @@
 name = "NumDisplay"
 uuid = "81312ecf-b97b-400a-930d-c253b7f54345"
-authors = ["Evgeny Metelkin <metelkin@insysbio.com>"]
+authors = ["Evgeny Metelkin <evgeny.metelkin@gmail.com>"]
 version = "0.1.0"
 
 [deps]
