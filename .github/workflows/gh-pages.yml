@@ -20,6 +20,7 @@ jobs:
           julia --project=docs -e '
             using Pkg
             Pkg.add(url="https://github.com/notinaboat/PiGPIOC.jl")
+            Pkg.add(path="..")
             Pkg.instantiate()'
       - name: Build and deploy
         run: julia --project=docs docs/make.jl
