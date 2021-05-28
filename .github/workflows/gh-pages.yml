@@ -22,6 +22,11 @@ jobs:
             Pkg.add(path="https://github.com/notinaboat/PiGPIOC.jl")
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
+      - run: |
+          julia --project=docs -e '
+            using Documenter: doctest
+            using NumDisplay
+            doctest(NumDisplay)'
       - name: Build and deploy
         run: julia --project=docs docs/make.jl
         env:
