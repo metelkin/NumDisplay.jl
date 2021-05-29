@@ -2,6 +2,12 @@
 
 Raspberry Pi package for controlling the 7-segment numeric displays written in Julia.
 
+The package supports several 
+## Approaches
+
+- BCD is a Binary-Coded Decimal chip which can be used to manage display with several digits. See [DisplayBCD](https://metelkin.github.io/NumDisplay.jl/dev/bcd/).
+
+
 ## Installation
 
 Julia must be installed on Raspberry Pi. 
@@ -17,6 +23,11 @@ The package can be installed from Julia environment with:
 ] add https://github.com/metelkin/NumDisplay.jl.git
 ```
 
-## Approaches
+## Notes
 
-- [using Binary-Coded Decimal (BCD) chip](bcd)
+- To run the code you need the full access to GPIO. Run it under sudo privileges.
+
+Example running the code from "test/run.jl".
+```julia
+sudo julia --project=. test/run.jl
+```

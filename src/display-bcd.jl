@@ -97,7 +97,7 @@ end
         position::Int
     )
 
-Writes the digit to the position. The result of the execution is changing one digit in a particular sector. 
+Writes a digit to the position. The result of the execution is changing one digit in a particular sector. 
 
 ## Arguments
 
@@ -116,7 +116,7 @@ function write_digit(
     value::Union{UInt8, Nothing}, # digit from 0 to 9
     position::Int # starting from less signifacant
 )
-    @assert 0 <= value <= 15 "value must be in range [0...15], got $digit"
+    @assert 0 <= value <= 15 "value must be in range [0...15], got $value"
     @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"
 
     indicator.buffer[position] = value !== nothing ? value : NO_DIGIT
@@ -124,15 +124,34 @@ function write_digit(
     update(indicator)
 end
 
+"""
+    function write_dp(
+        indicator::DisplayBCD,
+        dp_value::UInt8,
+        dp_position::Int
+    )
+
+Writes a dot symbol to the position. The result of the execution is changing one dot in a particular sector. 
+
+## Arguments
+
+- indicator : object representing display device
+
+- dp_value : value 0 or 1 to get dot OFF or ON.
+
+- position : number of sector to write starting from 1 which mean less signifacant digit.
+        The maximal value depends on available sectors, so it should be `<= length(indicator.digit_pins)`
+ 
+"""
 function write_dp(
     indicator::DisplayBCD,
-    value::UInt8,
-    position::Int # starting from less signifacant
+    dp_value::UInt8,
+    dp_position::Int # starting from less signifacant
 )
-    @assert 0 <= value <= 1 "value must be 0 or 1, got $digit"
-    @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"
+    @assert 0 <= dp_value <= 1 "dp_value must be 0 or 1, got $dp_value"
+    @assert 1 <= dp_position <= length(indicator.sectors_pins) "dp_position must be in range [1...$(length(indicator.sectors_pins))], got , got $dp_position"
 
-    indicator.dp_buffer[position] = value
+    indicator.dp_buffer[dp_position] = dp_value
 
     update(indicator)
 end
@@ -259,6 +278,7 @@ function update(indicator::DisplayBCD)
             end
         end
 
+        # digits
         value = indicator.buffer[i]
         for j in 1:4
             if value % 2 == 1
@@ -267,6 +287,16 @@ function update(indicator::DisplayBCD)
                 gpioOff |= 1 << indicator.input_pins[j]
             end
             value >>= 1
+        end
+
+        # dots
+        if indicator.dp_pin !== nothing
+            dot = indicator.dp_buffer[i]
+            if dot > 0
+                gpioOn |= 1 << indicator.dp_pin
+            else
+                gpioOff |= 1 << indicator.dp_pin
+            end
         end
 
         push!(pulse, PiGPIOC.gpioPulse_t(gpioOn, gpioOff, indicator.usDelay)) # on, off, usDelay

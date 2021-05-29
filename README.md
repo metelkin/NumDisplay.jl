@@ -6,9 +6,9 @@ Raspberry Pi package for controlling the 7-segment numeric displays written in J
 [![GitHub license](https://img.shields.io/github/license/metelkin/NumDisplay.jl.svg)](https://github.com/metelkin/NumDisplay.jl/blob/master/LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://metelkin.github.io/NumDisplay.jl/dev)
 
-## Supported approaches
+## Approaches
 
-- BCD is a Binary-Coded Decimal chip which can be used to manage display with several digits. See DisplayBCD.
+- BCD is a Binary-Coded Decimal chip which can be used to manage display with several digits. See [DisplayBCD](https://metelkin.github.io/NumDisplay.jl/dev/bcd/).
 
 ## More info
 
