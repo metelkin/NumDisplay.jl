@@ -79,6 +79,8 @@ stop(d)              # display nothing
 
 ![bcd-scheme](./bcd-scheme.png)
 
+[![Watch the video](https://img.youtube.com/vi/gWjStU8-2Ug/hqdefault.jpg)](https://youtu.be/gWjStU8-2Ug)
+
 **Notes**
 
 - Here I was using the NPN transistors to switch digits because I had them but MOSFETs was also possible there.
