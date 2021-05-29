@@ -77,7 +77,7 @@ stop(d)              # display nothing
 
 **Without dot**
 
-![scheme-bcd](./scheme-bcd.png)
+![bcd-scheme](./bcd-scheme.png)
 
 **Notes**
 
