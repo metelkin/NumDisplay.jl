@@ -1,6 +1,6 @@
 using NumDisplay
 
-ind = DisplayBCD([27, 22, 10, 9], (2, 3, 4, 17), 11)
+ind = DisplayDirect([05, 06, 13, 19], (2, 3, 4, 17, 27, 22, 10), 9)
 sleep(1)
 
 write_dp(ind, UInt8(1), 1) # ____.
