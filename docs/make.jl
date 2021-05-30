@@ -8,6 +8,7 @@ makedocs(
     modules = [NumDisplay],
     pages = [
         "Home" => "index.md",
+        "Direct" => "direct.md",
         "BCD" => "bcd.md",
         "API" => "api.md",
     ],

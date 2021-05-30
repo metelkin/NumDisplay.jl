@@ -15,8 +15,10 @@ gpioWaveTxStop
         input_pins::Tuple{Int,Int,Int,Int}  # pin numbers for binary code starting from less significant
         dp_pin::Union{Int, Nothing}         # pin changing dot state
         buffer::AbstractVector{UInt8}       # internal storage of digits values
-        dp_buffer::AbstractVector{UInt8}
+        dp_buffer::AbstractVector{UInt8}    # internal storage for dot states
         usDelay::Int                        # duration of period when sector is on
+        inverted_sectors::Bool              # if sector pins states must be inverted, i.e. 1 means LOW pin state
+        inverted_input::Bool                # if input pins and dp pin states must be inverted, i.e. 1 means LOW pin state
     end
 """
 struct DisplayBCD <: AbstractNumDisplay
@@ -47,18 +49,22 @@ The number of display digits equal to `sectors_pins` count.
 
 ## Arguments
 
-- sectors_pins : Vector of GPIO pin numbers connected to anode. The HIGH state means the digit is on. LOW means off.
+- `sectors_pins` : Vector of GPIO pin numbers connected to anode. The HIGH state means the digit is on. LOW means off.
     The first pin in array should manage the less significant digit.
 
-- input_pins : Tuple consisting of GPIO numbers representing the 4-bit code of a digit.
+- `input_pins` : Tuple consisting of GPIO numbers representing the 4-bit code of a digit.
     The first pin in tuple is less significant number.
 
-- dp_pin : Number of pin connected to dot LED (DP)
+- `dp_pin` : Number of pin connected to dot LED (DP)
 
-- fps : frame rate (frames per second). The digits in display are controlled by impulses of `sectors_pins`. 
+- `fps` : frame rate (frames per second). The digits in display are controlled by impulses of `sectors_pins`. 
     This argument sets the width of one impuls. 
     If `fps=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is `1000` Hz.
+
+- `inverted_sectors` : set `true` if displayed sector corresponds to LOW pin state. It depends on the curcuit used.
+
+- `inverted_input` : set `true` if input and dot state should be inverted before sending to the physical device. It depends on the curcuit used.
 """
 function DisplayBCD(
     sectors_pins::AbstractVector{Int},
@@ -116,13 +122,13 @@ Writes a digit to the position. The result of the execution is changing one digi
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
-- digit : decimal value from 0 to 9 or `nothing`. The last means an empty sector.
+- `digit` : decimal value from 0 to 9 or `nothing`. The last means an empty sector.
         Values from 10 to 14 are also possible here but results to miningless symbols.
         Value 15 means an empty sector and it is the same as `nothing`.
 
-- position : number of sector to write starting from 1 which mean less signifacant digit.
+- `position` : number of sector to write starting from 1 which mean less signifacant digit.
         The maximal value depends on available sectors, so it should be `<= length(indicator.digit_pins)`
  
 """
@@ -155,12 +161,12 @@ If `digit_vector` is shorter than number of sectors the rest sectors will be emp
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
-- digit_vector : vector of decimal values from 0 to 9 or `nothing`. The same meaning as `digit` in `write_digit()`.
+- `digit_vector` : vector of decimal values from 0 to 9 or `nothing`. The same meaning as `digit` in `write_digit()`.
     The first element of vector will be writte to the less significant sector, etc.
 
-- dp_position : position of dot in display
+- `dp_position` : position of dot in display
 ## Example
 
 ```

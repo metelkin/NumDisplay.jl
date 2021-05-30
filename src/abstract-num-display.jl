@@ -11,11 +11,11 @@ Writes a dot symbol to the position. The result of the execution is changing one
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
-- dp_value : value 0 or 1 to get dot OFF or ON.
+- `dp_value` : value 0 or 1 to get dot OFF or ON.
 
-- position : number of sector to write starting from 1 which mean less signifacant digit.
+- `position` : number of sector to write starting from 1 which mean less signifacant digit.
         The maximal value depends on available sectors, so it should be `<= length(indicator.digit_pins)`
  
 """
@@ -44,9 +44,11 @@ Writes the decimal value to the display.
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
-- number : decimal number. The maximal possible value depends on number of sectors and will be checked.
+- `number` : decimal number. The maximal possible value depends on number of sectors and will be checked.
+
+- `dp_position` : position of digit starting from less significant sector or nothing.
 
 ## Example
 
@@ -84,7 +86,7 @@ This function is used internaly by `write...` methods to update the display.
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
 """
 function update(indicator::AbstractNumDisplay)
@@ -168,7 +170,7 @@ Display empty sectors.
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
 """
 function clean(indicator::AbstractNumDisplay)
@@ -184,7 +186,7 @@ Stop device and reset the the initial state.
 
 ## Arguments
 
-- indicator : object representing display device
+- `indicator` : object representing display device
 
 """
 function stop(indicator::AbstractNumDisplay)

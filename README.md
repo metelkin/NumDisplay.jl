@@ -10,17 +10,19 @@ Raspberry Pi package for controlling the 7-segment numeric displays written in J
 
 ## Approaches
 
+- Direct method does not use any chips transforming input but it requires more GPIO pins. See [DisplayDirect](https://metelkin.github.io/NumDisplay.jl/dev/direct/).
 - BCD is a Binary-Coded Decimal chip which can be used to manage display with several digits. See [DisplayBCD](https://metelkin.github.io/NumDisplay.jl/dev/bcd/).
 
 ## More info
 
-[See the docs](https://metelkin.github.io/NumDisplay.jl/dev).
+[Read the docs](https://metelkin.github.io/NumDisplay.jl/dev).
 
 ### TODO list
 
+- [x] Direct common-anode or common-cathode
 - [x] BCD common anode
-- [ ] Common cathode
-- [ ] SPI
+- [ ] MAX7219-chip-based approach for common-cathode 
+- [ ] MAX7221-chip-based approach (SPI) for common-cathode 
 
 ## License
 
