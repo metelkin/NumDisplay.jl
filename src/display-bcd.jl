@@ -128,14 +128,14 @@ Writes a digit to the position. The result of the execution is changing one digi
         Values from 10 to 14 are also possible here but results to miningless symbols.
         Value 15 means an empty sector and it is the same as `nothing`.
 
-- `position` : number of sector to write starting from 1 which mean less signifacant digit.
+- `position` : number of sector to write starting from 1 which mean less significant digit.
         The maximal value depends on available sectors, so it should be `<= length(indicator.digit_pins)`
  
 """
 function write_digit(
     indicator::DisplayBCD,
     value::Union{UInt8, Nothing}, # digit from 0 to 9
-    position::Int # starting from less signifacant
+    position::Int # starting from less significant
 )
     @assert 0 <= value <= 15 "value must be in range [0...15], got $value"
     @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"

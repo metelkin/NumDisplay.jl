@@ -1,24 +1,5 @@
-# g f e d c b a
+# DP a b c d e f g
 # 0b0000000
-const TRANSLATOR = Dict(
-    UInt8(0) => 0b0111111,
-    UInt8(1) => 0b0000110,
-    UInt8(2) => 0b1011011,
-    UInt8(3) => 0b1001111,
-    UInt8(4) => 0b1100110,
-    UInt8(5) => 0b1101101,
-    UInt8(6) => 0b1111101,
-    UInt8(7) => 0b0000111,
-    UInt8(8) => 0b1111111,
-    UInt8(9) => 0b1101111,
-
-    UInt8(10) => 0b1011000,
-    UInt8(11) => 0b1001100,
-    UInt8(12) => 0b1100010,
-    UInt8(13) => 0b1101001,
-    UInt8(14) => 0b1111000,
-    UInt8(15) => 0b0000000
-)
 
 struct DisplayDirect <: AbstractNumDisplay
     sectors_pins::AbstractVector{Int}
@@ -81,7 +62,7 @@ end
 function write_digit(
     indicator::DisplayDirect,
     value::Union{UInt8, Nothing}, # binary digit from 0 to 9
-    position::Int # starting from less signifacant
+    position::Int # starting from less significant
 )
     @assert 0 <= value <= 15 "value must be in range [0...15], got $value"
     @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"
@@ -89,7 +70,7 @@ function write_digit(
     if value === nothing
         indicator.buffer[position] = empty_sector(indicator)
     else
-        indicator.buffer[position] = TRANSLATOR[value]
+        indicator.buffer[position] = NUM_TRANSLATOR[value]
     end
 
     update(indicator)
@@ -106,7 +87,7 @@ function write_number(
         if i > l || digit_vector[i] === nothing
             indicator.buffer[i] = empty_sector(indicator)
         else
-            indicator.buffer[i] = TRANSLATOR[digit_vector[i]]
+            indicator.buffer[i] = NUM_TRANSLATOR[digit_vector[i]]
         end
     end
 
