@@ -13,14 +13,14 @@ Writes the decimal value to the display.
 
 - `indicator` : object representing display device
 
-- `number` : decimal number. The maximal possible value depends on number of sectors and will be checked.
+- `number` : decimal number. The maximal possible value depends on number of digits and will be checked.
 
-- `dp_position` : position of digit starting from less significant sector or nothing.
+- `dp_position` : position of digit starting from less significant digit or nothing.
 
 ## Example
 
 ```
-# d is 4-digit (sector) display
+# d is 4-digit display
 write_number(d, 123)
 # the result is _123
 
@@ -111,7 +111,7 @@ This function is used internaly by `write...` methods to update the display.
 
 """
 function update(indicator::AbstractNumDisplay)
-    digits_count = length(indicator.sectors_pins)
+    digits_count = length(indicator.digits_pins)
 
     # create new wave based on indicator.buffer
     # number of pulses is equal to digits_count
@@ -120,10 +120,10 @@ function update(indicator::AbstractNumDisplay)
         gpioOn = 0
         gpioOff = 0
         for j in 1:digits_count
-            if xor(i == j, indicator.inverted_sectors)
-                gpioOn |= 1 << indicator.sectors_pins[j]
+            if xor(i == j, indicator.inverted_digits)
+                gpioOn |= 1 << indicator.digits_pins[j]
             else
-                gpioOff |= 1 << indicator.sectors_pins[j]
+                gpioOff |= 1 << indicator.digits_pins[j]
             end
         end
 
@@ -187,7 +187,7 @@ end
 """
     clean(indicator::AbstractNumDisplay)
 
-Display empty sectors.
+Display empty digits.
 
 ## Arguments
 
@@ -195,7 +195,7 @@ Display empty sectors.
 
 """
 function clean(indicator::AbstractNumDisplay)
-    fill!(indicator.buffer, empty_sector(indicator))
+    fill!(indicator.buffer, empty_digit(indicator))
     fill!(indicator.dp_buffer, 0b0)
     update(indicator)
 end
@@ -217,11 +217,11 @@ function stop(indicator::AbstractNumDisplay)
     PiGPIOC.gpioWaveTxStop()
 
     # clear buffer
-    fill!(indicator.buffer, empty_sector(indicator))
+    fill!(indicator.buffer, empty_digit(indicator))
     fill!(indicator.dp_buffer, 0b0)
 
     # clear pins
-    PiGPIOC.gpioWrite.(indicator.sectors_pins, 0)
+    PiGPIOC.gpioWrite.(indicator.digits_pins, 0)
     PiGPIOC.gpioWrite.(indicator.input_pins, 0)
     if indicator.dp_pin !== nothing
         PiGPIOC.gpioWrite(indicator.dp_pin, 0)

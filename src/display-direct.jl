@@ -2,24 +2,24 @@
 # 0b0000000
 
 struct DisplayDirect <: AbstractNumDisplay
-    sectors_pins::AbstractVector{Int}
+    digits_pins::AbstractVector{Int}
     input_pins::Tuple{Int,Int,Int,Int,Int,Int,Int}
     dp_pin::Union{Int, Nothing}
     buffer::AbstractVector{UInt8}
     dp_buffer::AbstractVector{UInt8}
     usDelay::Int
-    inverted_sectors::Bool
+    inverted_digits::Bool
     inverted_input::Bool
 end
 
-empty_sector(::DisplayDirect) = 0b0000000
+empty_digit(::DisplayDirect) = 0b0000000
 
 function DisplayDirect(
-    sectors_pins::AbstractVector{Int},
+    digits_pins::AbstractVector{Int},
     input_pins::Tuple{Int,Int,Int,Int,Int,Int,Int},
     dp_pin::Union{Int, Nothing} = nothing;
     fps::Int = 1000, # Hz
-    inverted_sectors::Bool = false,
+    inverted_digits::Bool = false,
     inverted_input::Bool = true
 )
     if PiGPIOC.gpioInitialise() < 0
@@ -35,8 +35,8 @@ function DisplayDirect(
     # TODO: check lower frequency, gpioWaveGetMaxMicros()
 
     # init pins
-    PiGPIOC.gpioSetMode.(sectors_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(sectors_pins, 0)
+    PiGPIOC.gpioSetMode.(digits_pins, PiGPIOC.PI_OUTPUT)
+    PiGPIOC.gpioWrite.(digits_pins, 0)
     PiGPIOC.gpioSetMode.(input_pins, PiGPIOC.PI_OUTPUT)
     PiGPIOC.gpioWrite.(input_pins, 0)
     if dp_pin !== nothing
@@ -44,17 +44,17 @@ function DisplayDirect(
         PiGPIOC.gpioWrite(dp_pin, 0)
     end
 
-    buffer = fill(0b0000000, length(sectors_pins))
-    dp_buffer = fill(0b0, length(sectors_pins))
+    buffer = fill(0b0000000, length(digits_pins))
+    dp_buffer = fill(0b0, length(digits_pins))
 
     DisplayDirect(
-        sectors_pins,
+        digits_pins,
         input_pins,
         dp_pin,
         buffer,
         dp_buffer,
         usDelay,
-        inverted_sectors,
+        inverted_digits,
         inverted_input
     )
 end
@@ -65,10 +65,10 @@ function write_digit(
     position::Int # starting from less significant
 )
     @assert 0 <= value <= 15 "value must be in range [0...15], got $value"
-    @assert 1 <= position <= length(indicator.sectors_pins) "position must be in range [1...$(length(indicator.sectors_pins))], got , got $position"
+    @assert 1 <= position <= length(indicator.digits_pins) "position must be in range [1...$(length(indicator.digits_pins))], got , got $position"
 
     if value === nothing
-        indicator.buffer[position] = empty_sector(indicator)
+        indicator.buffer[position] = empty_digit(indicator)
     else
         indicator.buffer[position] = NUM_TRANSLATOR[value]
     end
@@ -83,16 +83,16 @@ function write_number(
 ) where D <: Union{UInt8, Nothing}
     # TODO: check digit_vector
     l = length(digit_vector)
-    for i in 1:length(indicator.sectors_pins)
+    for i in 1:length(indicator.digits_pins)
         if i > l || digit_vector[i] === nothing
-            indicator.buffer[i] = empty_sector(indicator)
+            indicator.buffer[i] = empty_digit(indicator)
         else
             indicator.buffer[i] = NUM_TRANSLATOR[digit_vector[i]]
         end
     end
 
     fill!(indicator.dp_buffer, 0b0)
-    if dp_position !== nothing && 1 <= dp_position <= length(indicator.sectors_pins)
+    if dp_position !== nothing && 1 <= dp_position <= length(indicator.digits_pins)
         indicator.dp_buffer[dp_position] = 0b1
     end
 

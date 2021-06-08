@@ -10,7 +10,7 @@ export DisplaySPI
 export scan_rate, decode_mode, set_intensity, set_limit, shutdown_mode_on, shutdown_mode_off,
     test_mode_on, test_mode_off, write_digit
 
-# update, clean, stop, empty_sector
+# update, clean, stop, empty_digit
 
 # high level
 export write_number, write_symbols

@@ -1,14 +1,14 @@
 # Direct approach
 
-This method does not require any chip. Each segment in sector is managed by its own GPIO pin.
+This method does not require any chip. Each segment in digit is managed by its own GPIO pin.
 It can serve the common-anode and common-cathod display.
 
-The method requires 7 pins to display decimal and additionally one pin per sector.
-For example 4-sector-display requires 7 + 4 = 11 GPIO pins. 
-8-sector-display requires 7 + 8 = 15 GPIO pins.
+The method requires 7 pins to display decimal and additionally one pin per digit.
+For example 4-digit-display requires 7 + 4 = 11 GPIO pins. 
+8-digit-display requires 7 + 8 = 15 GPIO pins.
 
 If you use dot on display you need the additional pin.
-For example 4-sector-display requires 7 + 1 + 4 = 12 GPIO pins. 
+For example 4-digit-display requires 7 + 1 + 4 = 12 GPIO pins. 
 
 ## Usage
 
@@ -17,7 +17,7 @@ For example 4-sector-display requires 7 + 1 + 4 = 12 GPIO pins.
 ```julia
 using NumericDisplay
 d = DisplayDirect(
-    [       # pins to on/off sectors
+    [       # pins to on/off digits
         5, # less significant decimal digit
         6,
         13,
@@ -44,7 +44,7 @@ stop(d)              # display nothing
 
 ```julia
 using NumericDisplay
-d = DisplayDirect # pins to on/off sectors
+d = DisplayDirect # pins to on/off digits
         27, # less significant decimal digit
         22,
         10,
