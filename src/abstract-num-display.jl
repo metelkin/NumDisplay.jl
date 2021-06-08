@@ -1,39 +1,6 @@
 abstract type AbstractNumDisplay end
 
 """
-    function write_dp(
-        indicator::AbstractNumDisplay,
-        dp_value::UInt8,
-        dp_position::Int
-    )
-
-Writes a dot symbol to the position. The result of the execution is changing one dot in a particular sector. 
-
-## Arguments
-
-- `indicator` : object representing display device
-
-- `dp_value` : value 0 or 1 to get dot OFF or ON.
-
-- `position` : number of sector to write starting from 1 which mean less signifacant digit.
-        The maximal value depends on available sectors, so it should be `<= length(indicator.digit_pins)`
- 
-"""
-function write_dp(
-    indicator::AbstractNumDisplay,
-    dp_value::UInt8,
-    dp_position::Int # starting from less signifacant
-)
-    @assert 0 <= dp_value <= 1 "dp_value must be 0 or 1, got $dp_value"
-    @assert 1 <= dp_position <= length(indicator.sectors_pins) "dp_position must be in range [1...$(length(indicator.sectors_pins))], got , got $dp_position"
-
-    indicator.dp_buffer[dp_position] = dp_value
-
-    update(indicator)
-end
-
-
-"""
     write_number(
         indicator::AbstractNumDisplay,
         number::Int,
@@ -65,17 +32,71 @@ write_number(d, 12345)
 ```
 """
 function write_number(
-    indicator::AbstractNumDisplay,
+    d::AbstractNumDisplay,
     number::Int,
     dp_position::Union{Int, Nothing} = nothing
 )
-    indicator_len = length(indicator.sectors_pins)
+    @assert 0 <= number < 10^8 "number $number cannot be displayed on 8-digits indicator"   
 
-    @assert 0 <= number < 10^indicator_len "number $number cannot be displayed on $indicator_len indicator"   
+    write_number(d, digits(number), dp_position)
+end
 
-    digit_vector = UInt8.(digits(number))
+"""
+Writes several digits
+Runs display in decode mode and display several digits
+element in numer_vector must be Integers
+"""
+function write_number(
+    d::AbstractNumDisplay,
+    number_vector::AbstractArray{D},
+    dp_position::Union{Int, Nothing} = nothing
+) where D <: Union{Int, Nothing}
+    l = length(number_vector)
+    set_limit(d, l)
+    decode_mode(d)
 
-    write_number(indicator, digit_vector, dp_position)
+    for i in 1:l
+        num_i = number_vector[i] !== nothing ? number_vector[i] : 15
+        is_dot = dp_position == i
+        @assert 0 <= num_i <= 15 "number in vector must be between 0 and 15, got $num_i"
+
+        digit_i = is_dot << 7 | num_i # dot coded by most significant bit
+        write_digit(d, UInt8(digit_i), i)
+    end
+end
+
+"""
+works in segment-wise mode
+set active segments DP A B C D E F G
+"""
+function write_symbols(
+    d::AbstractNumDisplay,
+    byte_vector::AbstractArray{UInt8},
+)
+    l = length(byte_vector)
+    set_limit(d, l)
+    decode_mode(d, 0x0)
+
+    for i in 1:l
+        write_digit(d, byte_vector[i], i)
+    end
+end
+
+function write_symbols(
+    d::AbstractNumDisplay,
+    symbol_vector::AbstractArray{Char},
+)
+    # CHAR_TRANSLATOR
+    byte_vector = [get(CHAR_TRANSLATOR, char, 0b00000000) for char in symbol_vector]
+    write_symbols(d, byte_vector)
+end
+
+function write_symbols(
+    d::AbstractNumDisplay,
+    s::String
+)
+    symbol_vector = collect(s)
+    write_symbols(d, reverse(symbol_vector))
 end
 
 """

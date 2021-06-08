@@ -61,7 +61,7 @@ all digits free mode => 0x00 = 0b0000_0000
 first decode other free mode => 0x01 = 0b0000_0001
 """
 function decode_mode(d::DisplaySPI, decode::UInt8 = 0b1111_1111)
-    data = [0b0000_1001, decode];
+    data = [0b0000_1001, decode]
     spiWrite_bytes(d, data)
 end
 
@@ -72,47 +72,45 @@ minimal intensity => 1
 function set_intensity(d::DisplaySPI, intensity::Int = 16)
     @assert 1 <= intensity <= 16 "intensity must be between 1 and 16, got $intensity"
 
-    data = [0b0000_1010, UInt8(intensity - 1)];
+    data = [0b0000_1010, UInt8(intensity - 1)]
     spiWrite_bytes(d, data)
 end
 
 """
-Set how many digits will be visible
+Set how many digits will be visible starting from less significant
 1 means only digit 1 is shown
 8 meand all 8 digits will be shown
 """
 function set_limit(d::DisplaySPI, limit::Int = 8)
     @assert 1 <= limit <= 8 "limit must be between 1 and 8, got $limit"
 
-    data = [0b0000_1011, UInt8(limit - 1)];
+    data = [0b0000_1011, UInt8(limit - 1)]
     spiWrite_bytes(d, data)
 end
 
 function shutdown_mode_on(d::DisplaySPI)
-    data = [0b0000_1100, 0b0000_0000];
+    data = [0b0000_1100, 0b0000_0000]
     spiWrite_bytes(d, data)
 end
 
 function shutdown_mode_off(d::DisplaySPI)
-    data = [0b0000_1100, 0b0000_0001];
+    data = [0b0000_1100, 0b0000_0001]
     spiWrite_bytes(d, data)
 end
 
 function test_mode_on(d::DisplaySPI)
-    data = [0b0000_1111, 0b0000_0001];
+    data = [0b0000_1111, 0b0000_0001]
     spiWrite_bytes(d, data)
 end
 
 function test_mode_off(d::DisplaySPI)
-    data = [0b0000_1111, 0b0000_0000];
+    data = [0b0000_1111, 0b0000_0000]
     spiWrite_bytes(d, data)
 end
 
-function write_digit!(d::DisplaySPI, value::UInt8, position::Int)
+function write_digit(d::DisplaySPI, value::UInt8, position::Int)
     @assert 1 <= position <= 8 "position must be between 1 and 8, got $position"
 
-    data = [UInt8(position), value];
+    data = [UInt8(position), value]
     spiWrite_bytes(d, data)
 end
-
-### high-level operations
