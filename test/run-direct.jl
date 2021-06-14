@@ -1,6 +1,7 @@
 using NumDisplay
 
-ind = DisplayDirect([05, 06, 13, 19], (2, 3, 4, 17, 27, 22, 10), 9)
+ind = DisplayDirect([27, 22, 10, 9], (11, 2, 3, 4, 17, 27, 22, 10))
+shutdown_mode_off(ind)
 sleep(1)
 
 write_digit(ind, UInt8(0), 1) # ___0
@@ -12,7 +13,7 @@ sleep(1)
 write_digit(ind, UInt8(3), 4) # 3210
 sleep(1)
 
-clean(ind)                    # ____
+#clean(ind)                    # ____
 sleep(1)
 
 write_digit(ind, UInt8(4), 1) # ___4
@@ -24,7 +25,7 @@ sleep(1)
 write_digit(ind, UInt8(7), 4) # 7654
 sleep(1)
 
-clean(ind)                    # ____
+#clean(ind)                    # ____
 sleep(1)
 
 write_digit(ind, UInt8(8), 1) # ___8
@@ -35,8 +36,9 @@ write_digit(ind, UInt8(10), 3) # _?98
 sleep(1)
 write_digit(ind, UInt8(11), 4) # ??98
 sleep(1)
-clean(ind)                    # ____
+# clean(ind)                    # ____
 
+#=
 @info "writing  numbers"
 
 write_number(ind, 0)      # ___0
@@ -59,5 +61,5 @@ write_number(ind, 0)      # ___0
 sleep(1)
 
 stop(ind)                 # ____
-
+=#
 @info "STOP"
