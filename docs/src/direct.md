@@ -32,7 +32,7 @@ d = DisplayDirect(
         22, # f
         10 # g
     );
-    inverted_input = true
+    inverted_sectors = true
 )
 
 write_number(d, 666) # display _666
@@ -60,7 +60,7 @@ d = DisplayDirect # pins to on/off digits
         10 # g
     );
     11;     # pin to control dot
-    inverted_input = true
+    inverted_sectors = true
 )
 
 write_number(d, 666) # display _666
@@ -79,5 +79,5 @@ stop(d)              # display nothing
 **Notes**
 
 - The scheme uses power from 3.3V signal pins. To use the external power you need to use NPN or MOSFET transistors.
-- If you use common anode, use `DisplayDirect(...; inverted_input=true, inverted_input=false)` in constructor.
-- If you use common cathode, use `DisplayDirect(...; inverted_input=false, inverted_input=true)` in constructor.
+- If you use common anode, use `DisplayDirect(...; inverted_sectors=true, inverted_sectors=false)` in constructor.
+- If you use common cathode, use `DisplayDirect(...; inverted_sectors=false, inverted_sectors=true)` in constructor.

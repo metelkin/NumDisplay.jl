@@ -12,24 +12,24 @@ gpioWaveTxStop
 """
     struct DisplayBCD <: AbstractNumDisplay
         digits_pins::AbstractVector{Int}   # pin numbers starting from less significant
-        input_pins::Tuple{Int,Int,Int,Int}  # pin numbers for binary code starting from less significant
+        sectors_pins::Tuple{Int,Int,Int,Int}  # pin numbers for binary code starting from less significant
         dp_pin::Union{Int, Nothing}         # pin changing dot state
         buffer::AbstractVector{UInt8}       # internal storage of digits values
         dp_buffer::AbstractVector{UInt8}    # internal storage for dot states
         usDelay::Int                        # duration of period when digit is on
         inverted_digits::Bool              # if digit pins states must be inverted, i.e. 1 means LOW pin state
-        inverted_input::Bool                # if input pins and dp pin states must be inverted, i.e. 1 means LOW pin state
+        inverted_sectors::Bool                # if input pins and dp pin states must be inverted, i.e. 1 means LOW pin state
     end
 """
 struct DisplayBCD <: AbstractNumDisplay
     digits_pins::AbstractVector{Int}
-    input_pins::Tuple{Int,Int,Int,Int}
+    sectors_pins::Tuple{Int,Int,Int,Int}
     dp_pin::Union{Int, Nothing}
     buffer::AbstractVector{UInt8}
     dp_buffer::AbstractVector{UInt8}
     usDelay::Int
     inverted_digits::Bool
-    inverted_input::Bool
+    inverted_sectors::Bool
 end
 
 empty_digit(::DisplayBCD) = 0b1111 # NO_DIGIT
@@ -37,11 +37,11 @@ empty_digit(::DisplayBCD) = 0b1111 # NO_DIGIT
 """
     function DisplayBCD(
         digits_pins::AbstractVector{Int},
-        input_pins::Tuple{Int,Int,Int,Int},
+        sectors_pins::Tuple{Int,Int,Int,Int},
         dp_pin::Union{Int, Nothing} = nothing;
         fps::Int = 1000,
         inverted_digits::Bool = false,
-        inverted_input::Bool = false
+        inverted_sectors::Bool = false
     )
 
 Creates device representing numerical display with several digits under control of the BCD chip.
@@ -52,7 +52,7 @@ The number of display digits equal to `digits_pins` count.
 - `digits_pins` : Vector of GPIO pin numbers connected to anode. The HIGH state means the digit is on. LOW means off.
     The first pin in array should manage the less significant digit.
 
-- `input_pins` : Tuple consisting of GPIO numbers representing the 4-bit code of a digit.
+- `sectors_pins` : Tuple consisting of GPIO numbers representing the 4-bit code of a digit.
     The first pin in tuple is less significant number.
 
 - `dp_pin` : Number of pin connected to dot LED (DP)
@@ -64,15 +64,15 @@ The number of display digits equal to `digits_pins` count.
 
 - `inverted_digits` : set `true` if displayed digits corresponds to LOW pin state. It depends on the curcuit used.
 
-- `inverted_input` : set `true` if input and dot state should be inverted before sending to the physical device. It depends on the curcuit used.
+- `inverted_sectors` : set `true` if input and dot state should be inverted before sending to the physical device. It depends on the curcuit used.
 """
 function DisplayBCD(
     digits_pins::AbstractVector{Int},
-    input_pins::Tuple{Int,Int,Int,Int},
+    sectors_pins::Tuple{Int,Int,Int,Int},
     dp_pin::Union{Int, Nothing} = nothing;
     fps::Int = 1000, # Hz
     inverted_digits::Bool = false,
-    inverted_input::Bool = false
+    inverted_sectors::Bool = false
 )
     if PiGPIOC.gpioInitialise() < 0
         throw("pigpio initialisation failed.")
@@ -89,8 +89,8 @@ function DisplayBCD(
     # init pins
     PiGPIOC.gpioSetMode.(digits_pins, PiGPIOC.PI_OUTPUT)
     PiGPIOC.gpioWrite.(digits_pins, 0)
-    PiGPIOC.gpioSetMode.(input_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(input_pins, 0)
+    PiGPIOC.gpioSetMode.(sectors_pins, PiGPIOC.PI_OUTPUT)
+    PiGPIOC.gpioWrite.(sectors_pins, 0)
     if dp_pin !== nothing
         PiGPIOC.gpioSetMode(dp_pin, PiGPIOC.PI_OUTPUT)
         PiGPIOC.gpioWrite(dp_pin, 0)
@@ -101,13 +101,13 @@ function DisplayBCD(
 
     DisplayBCD(
         digits_pins,
-        input_pins,
+        sectors_pins,
         dp_pin,
         buffer,
         dp_buffer,
         usDelay,
         inverted_digits,
-        inverted_input
+        inverted_sectors
     )
 end
 

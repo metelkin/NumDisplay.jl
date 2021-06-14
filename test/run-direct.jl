@@ -1,6 +1,6 @@
 using NumDisplay
 
-ind = DisplayDirect([05, 06, 13, 19], (2, 3, 4, 17, 27, 22, 10), 9; inverted_input = true)
+ind = DisplayDirect([05, 06, 13, 19], (2, 3, 4, 17, 27, 22, 10), 9)
 sleep(1)
 
 write_digit(ind, UInt8(0), 1) # ___0

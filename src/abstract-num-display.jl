@@ -110,6 +110,7 @@ This function is used internaly by `write...` methods to update the display.
 - `indicator` : object representing display device
 
 """
+
 function update(indicator::AbstractNumDisplay)
     digits_count = length(indicator.digits_pins)
 
@@ -129,11 +130,11 @@ function update(indicator::AbstractNumDisplay)
 
         # digits
         value = indicator.buffer[i]
-        for j in 1:length(indicator.input_pins)
-            if xor(value % 2 == 1, indicator.inverted_input)
-                gpioOn |= 1 << indicator.input_pins[j]
+        for j in 1:length(indicator.sectors_pins)
+            if xor(value % 2 == 1, indicator.inverted_sectors)
+                gpioOn |= 1 << indicator.sectors_pins[j]
             else
-                gpioOff |= 1 << indicator.input_pins[j]
+                gpioOff |= 1 << indicator.sectors_pins[j]
             end
             value >>= 1
         end
@@ -141,7 +142,7 @@ function update(indicator::AbstractNumDisplay)
         # dots
         if indicator.dp_pin !== nothing
             dot = indicator.dp_buffer[i]
-            if xor(dot > 0, indicator.inverted_input)
+            if xor(dot > 0, indicator.inverted_sectors)
                 gpioOn |= 1 << indicator.dp_pin
             else
                 gpioOff |= 1 << indicator.dp_pin
@@ -222,7 +223,7 @@ function stop(indicator::AbstractNumDisplay)
 
     # clear pins
     PiGPIOC.gpioWrite.(indicator.digits_pins, 0)
-    PiGPIOC.gpioWrite.(indicator.input_pins, 0)
+    PiGPIOC.gpioWrite.(indicator.sectors_pins, 0)
     if indicator.dp_pin !== nothing
         PiGPIOC.gpioWrite(indicator.dp_pin, 0)
     end

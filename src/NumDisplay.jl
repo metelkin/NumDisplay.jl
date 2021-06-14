@@ -3,8 +3,8 @@ module NumDisplay
 using PiGPIOC
 
 # constructors
-# DisplayDirect, DisplayBCD
-export DisplaySPI
+#, DisplayBCD
+export DisplaySPI, DisplayDirect
 
 # low level
 export scan_rate, decode_mode, set_intensity, set_limit, shutdown_mode_on, shutdown_mode_off,
@@ -16,8 +16,9 @@ export scan_rate, decode_mode, set_intensity, set_limit, shutdown_mode_on, shutd
 export write_number, write_symbols
 
 include("decoding.jl")
+include("extend.jl")
 include("abstract-num-display.jl")
-#include("display-direct.jl")
+include("display-direct.jl")
 #include("display-bcd.jl")
 include("display-spi.jl")
 
