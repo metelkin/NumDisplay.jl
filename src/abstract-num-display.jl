@@ -36,7 +36,7 @@ function write_number(
     number::Int,
     dp_position::Union{Int, Nothing} = nothing
 )
-    @assert 0 <= number < 10^8 "number $number cannot be displayed on 8-digits indicator"   
+    @assert 0 <= number < 10^size(d) "number $number cannot be displayed on $(size(d))-digits indicator"
 
     write_number(d, digits(number), dp_position)
 end
@@ -52,6 +52,8 @@ function write_number(
     dp_position::Union{Int, Nothing} = nothing
 ) where D <: Union{Int, Nothing}
     l = length(number_vector)
+
+    @assert 0 <= l <= size(d) "number_vector of length $l cannot be displayed on $(size(d))-digits indicator"
     set_limit(d, l)
     decode_mode(d)
 

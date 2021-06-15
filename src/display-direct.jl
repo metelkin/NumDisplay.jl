@@ -3,7 +3,7 @@
 
 mutable struct DisplayDirect <: AbstractNumDisplay
     digits_pins::AbstractVector{Int}
-    sectors_pins::Tuple{Union{Int,Nothing},Int,Int,Int,Int,Int,Int} # DP a b c d e f g
+    sectors_pins::Tuple{Union{Int,Nothing},Int,Int,Int,Int,Int,Int,Int} # DP a b c d e f g
     buffer::AbstractVector{UInt8}
     usDelay::Int
     inverted_digits::Bool
@@ -14,6 +14,7 @@ mutable struct DisplayDirect <: AbstractNumDisplay
 end
 
 scan_rate(d::DisplayDirect) = ceil(Int, 10^6 / d.usDelay) # Hz
+size(d::DisplayDirect) = length(d.digits_pins)
 
 function DisplayDirect(
     digits_pins::AbstractVector{Int},
@@ -21,6 +22,8 @@ function DisplayDirect(
     scan_rate::Real = 800, # Hz
     common_cathode::Bool = false
 )
+    @assert 1 <= length(digits_pins) <= 8 "The package supports up to 8 digits, got $(length(digits_pins))"
+
     # for common anode
     inverted_digits::Bool = common_cathode
     inverted_sectors::Bool = !common_cathode
@@ -40,14 +43,14 @@ function DisplayDirect(
     
     # init pins
     PiGPIOC.gpioSetMode.(digits_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(digits_pins, 0)
+    PiGPIOC.gpioWrite.(digits_pins, !inverted_digits ? 0 : 1)
     PiGPIOC.gpioSetMode.(sectors_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(sectors_pins, 0)
+    PiGPIOC.gpioWrite.(sectors_pins, inverted_sectors ? 0 : 1)
 
-    buffer = fill(0b0000000, length(digits_pins))
+    buffer = fill(0b00000000, length(digits_pins))
     decode_mode = 0b00000000
 
-    d = DisplayDirect(
+    return DisplayDirect(
         digits_pins,
         sectors_pins,
         buffer,
@@ -56,16 +59,14 @@ function DisplayDirect(
         inverted_sectors,
         decode_mode,
         5, # default intensity
-        1 # default limit
+        4 # default limit
     )
-
-    return d
 end
 
 # update wave based on buffer
-function get_wave(d::DisplayDirect)
+function generate_wave(d::DisplayDirect)
     # create new wave based on d.buffer
-    # number of pulses is equal to digits_count
+    # number of pulses is equal to limit
     pulse = PiGPIOC.gpioPulse_t[]
     for i in 1:d.limit
         gpioOn = 0
@@ -82,7 +83,7 @@ function get_wave(d::DisplayDirect)
 
         # sectors
         value = d.buffer[i]
-        for j in 1:8
+        for j in 8:(-1):1
             if xor(value % 2 == 1, d.inverted_sectors)
                 gpioOn |= 1 << d.sectors_pins[j]
             else
@@ -107,7 +108,7 @@ function get_wave(d::DisplayDirect)
 end
 
 # stop previous (if active) and run
-function run_wave(d::DisplayDirect, wave_id::Int)
+function run_wave(wave_id::Int)
     # get old
     old_wave_id = PiGPIOC.gpioWaveTxAt()
 
@@ -132,11 +133,19 @@ function run_wave(d::DisplayDirect, wave_id::Int)
     return nothing
 end
 
+# generate and run if in normal mode
+function update(d::DisplayDirect)
+    if PiGPIOC.gpioWaveTxBusy() == 1
+        wave_id = generate_wave(d)
+        run_wave(wave_id)
+    end
+end
+
 function shutdown_mode_off(d::DisplayDirect)
     # do nothing in normal mode
     if PiGPIOC.gpioWaveTxBusy() == 0
-        wave_id = get_wave(d)
-        run_wave(d, wave_id)
+        wave_id = generate_wave(d)
+        run_wave(wave_id)
     end
 end
 
@@ -147,8 +156,8 @@ function shutdown_mode_on(d::DisplayDirect)
         PiGPIOC.gpioWaveTxStop()
     
         # clear pins
-        PiGPIOC.gpioWrite.(indicator.digits_pins, 0)
-        PiGPIOC.gpioWrite.(indicator.sectors_pins, 0)
+        PiGPIOC.gpioWrite.(d.digits_pins, !d.inverted_digits ? 0 : 1)
+        PiGPIOC.gpioWrite.(d.sectors_pins, d.inverted_sectors ? 0 : 1)
     end
 end
 
@@ -156,10 +165,15 @@ function set_limit(d::DisplayDirect, limit::Int = 8)
     @assert 1 <= limit <= 8 "limit must be between 1 and 8, got $limit"
     d.limit = limit
 
-    if PiGPIOC.gpioWaveTxBusy() == 1
-        wave_id = get_wave(d)
-        run_wave(d, wave_id)
-    end
+    update(d)
+    # set empty states
+    pins_to_free = (d.limit+1):size(d)
+    PiGPIOC.gpioWrite.(d.digits_pins[pins_to_free], !d.inverted_digits ? 0 : 1)
+end
+
+function decode_mode(d::DisplayDirect, decode::UInt8 = 0b1111_1111)
+    d.decode_mode = decode
+    update(d)
 end
 
 function write_digit(
@@ -168,13 +182,9 @@ function write_digit(
     position::Int # starting from less significant
 )
     @assert 1 <= position <= 8 "position must be between 1 and 8, got $position"
-
     d.buffer[position] = value
 
-    if PiGPIOC.gpioWaveTxBusy() == 1
-        wave_id = get_wave(d)
-        run_wave(d, wave_id)
-    end
+    update(d)
 end
 
 #=

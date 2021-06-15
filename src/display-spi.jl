@@ -53,6 +53,8 @@ scan rate = 800 Hz (500-1300) from docs
 """
 scan_rate(::DisplaySPI) = 800
 
+size(d::DisplaySPI) = 8
+
 ### low-level operations
 
 """
