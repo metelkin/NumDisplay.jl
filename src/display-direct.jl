@@ -5,11 +5,11 @@ mutable struct DisplayDirect <: AbstractNumDisplay
     digits_pins::AbstractVector{Int}
     sectors_pins::Tuple{Union{Int,Nothing},Int,Int,Int,Int,Int,Int,Int} # DP a b c d e f g
     buffer::AbstractVector{UInt8}
-    usDelay::Int
+    usDelay::Real
     inverted_digits::Bool
     inverted_sectors::Bool
     decode_mode::UInt8
-    intensity::Int
+    intensity::Int # 16 max
     limit::Int
 end
 
@@ -39,13 +39,13 @@ function DisplayDirect(
     min_rate = ceil(Int, 10^6 / PiGPIOC.gpioWaveGetMaxMicros())
     max_rate = 10^6 # based on minimal usDelay = 1 
     @assert min_rate <= scan_rate <= max_rate "Scan rate must be between $min_rate and $max_rate, got $scan_rate"
-    usDelay = ceil(Int, 10^6 / scan_rate) # conversion to us
-    
+    usDelay = 10^6 / scan_rate # conversion to us
+
     # init pins
     PiGPIOC.gpioSetMode.(digits_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(digits_pins, !inverted_digits ? 0 : 1)
+    PiGPIOC.gpioWrite.(digits_pins, 0)
     PiGPIOC.gpioSetMode.(sectors_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(sectors_pins, inverted_sectors ? 0 : 1)
+    PiGPIOC.gpioWrite.(sectors_pins, 0)
 
     buffer = fill(0b00000000, length(digits_pins))
     decode_mode = 0b00000000
@@ -68,6 +68,8 @@ function generate_wave(d::DisplayDirect)
     # create new wave based on d.buffer
     # number of pulses is equal to limit
     pulse = PiGPIOC.gpioPulse_t[]
+    activePeriod = ceil(Int, d.usDelay * d.intensity / 16)
+    inactivePeriod = ceil(Int, d.usDelay * (1 - d.intensity / 16) * d.limit)
     for i in 1:d.limit
         gpioOn = 0
         gpioOff = 0
@@ -80,9 +82,20 @@ function generate_wave(d::DisplayDirect)
                 gpioOff |= 1 << d.digits_pins[j]
             end
         end
+        
+        # if decode mode than 1
+        decode_i = (d.decode_mode >> (i - 1)) % 2
 
         # sectors
-        value = d.buffer[i]
+        buffer_i = d.buffer[i]
+        if decode_i == 0
+            value = buffer_i
+        else
+            value = NUM_TRANSLATOR[buffer_i % 0b00010000] # get 4 least significant bits
+            dp_state = buffer_i >> 7
+            value += dp_state << 7
+        end
+
         for j in 8:(-1):1
             if xor(value % 2 == 1, d.inverted_sectors)
                 gpioOn |= 1 << d.sectors_pins[j]
@@ -92,10 +105,29 @@ function generate_wave(d::DisplayDirect)
             value >>= 1
         end
 
-        push!(pulse, PiGPIOC.gpioPulse_t(gpioOn, gpioOff, d.usDelay)) # on, off, usDelay
+        push!(pulse, PiGPIOC.gpioPulse_t(gpioOn, gpioOff, activePeriod)) # on, off, usDelay
     end
 
-    PiGPIOC.gpioWaveAddGeneric(d.limit, pulse)
+    # set pause after each blink
+    gpioOffPause = 0x0
+    gpioOnPause = 0x0
+    for j in 1:d.limit
+        if d.inverted_digits
+            gpioOnPause |= 1 << d.digits_pins[j]
+        else
+            gpioOffPause |= 1 << d.digits_pins[j] # turn off all digit pins 
+        end
+    end
+    for j in 8:(-1):1
+        if d.inverted_sectors
+            gpioOnPause |= 1 << d.sectors_pins[j]
+        else
+            gpioOffPause |= 1 << d.sectors_pins[j]
+        end
+    end
+    push!(pulse, PiGPIOC.gpioPulse_t(gpioOnPause, gpioOffPause, inactivePeriod))
+
+    PiGPIOC.gpioWaveAddGeneric(d.limit + 1, pulse)
     wave_id = PiGPIOC.gpioWaveCreate()
     if wave_id < 0
         # return Upon success a wave id greater than or equal to 0 is returned, 
@@ -150,15 +182,29 @@ function shutdown_mode_off(d::DisplayDirect)
 end
 
 function shutdown_mode_on(d::DisplayDirect)
-    # do nothing in shutdown mode
-    if PiGPIOC.gpioWaveTxBusy() == 1
-        # stop current wave
-        PiGPIOC.gpioWaveTxStop()
-    
-        # clear pins
-        PiGPIOC.gpioWrite.(d.digits_pins, !d.inverted_digits ? 0 : 1)
-        PiGPIOC.gpioWrite.(d.sectors_pins, d.inverted_sectors ? 0 : 1)
+    # stop current wave
+    PiGPIOC.gpioWaveTxStop()
+        
+    # clear pins
+    PiGPIOC.gpioWrite.(d.digits_pins, 0)
+    PiGPIOC.gpioWrite.(d.sectors_pins, 0)
+end
+
+function test_mode_off(d::DisplayDirect)
+    # do nothing in normal mode
+    if PiGPIOC.gpioWaveTxBusy() == 0
+        wave_id = generate_wave(d)
+        run_wave(wave_id)
     end
+end
+
+function test_mode_on(d::DisplayDirect)
+    # stop current wave
+    PiGPIOC.gpioWaveTxStop()
+
+    # clear pins
+    PiGPIOC.gpioWrite.(d.digits_pins, d.inverted_digits ? 0 : 1) # inverted_digits = false
+    PiGPIOC.gpioWrite.(d.sectors_pins, d.inverted_sectors ? 0 : 1) # inverted_sectors = true
 end
 
 function set_limit(d::DisplayDirect, limit::Int = 8)
@@ -173,6 +219,13 @@ end
 
 function decode_mode(d::DisplayDirect, decode::UInt8 = 0b1111_1111)
     d.decode_mode = decode
+    update(d)
+end
+
+function set_intensity(d::DisplayDirect, intensity::Int = 16)
+    @assert 1 <= intensity <= 16 "intensity must be between 1 and 16, got $intensity"
+    d.intensity = intensity
+    
     update(d)
 end
 

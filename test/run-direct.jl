@@ -7,6 +7,6 @@ shutdown_mode_off(d)
 
 include("common-high-level-4.jl")
 
-# include("common-low-level-4.jl")
+include("common-low-level-4.jl")
 
 println("Stop.")
