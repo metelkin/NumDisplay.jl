@@ -18,12 +18,6 @@ Raspberry Pi package for controlling the 7-segment numeric displays written in J
 
 [Read the docs](https://metelkin.github.io/NumDisplay.jl/dev).
 
-### TODO list
-
-- [x] Direct (no-chip required) common-anode or common-cathode
-- [x] BCD common anode
-- [x] MAX7219/MAX7221-chip-based approach (SPI) for common-cathode displays
-
 ## License
 
 Published under [MIT License](LICENSE)

@@ -1,3 +1,4 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-
+NumDisplay = "81312ecf-b97b-400a-930d-c253b7f54345"
+PiGPIOC = "30a511cb-78f8-4457-8440-9b2c99933694"

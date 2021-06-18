@@ -1,9 +1,19 @@
-
-# 0b0000000
-
-mutable struct DisplayDirect <: AbstractNumDisplay
-    digits_pins::AbstractVector{Int}
-    sectors_pins::Tuple{Union{Int,Nothing},Int,Int,Int,Int,Int,Int,Int} # DP a b c d e f g
+"""
+    mutable struct DisplayDirect <: AbstractNumDisplay where IN <: Union{Int,Nothing}
+        digits_pins::AbstractVector{IN}              # pins' numbers to control digit
+        sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN} # pins' number to control sectors: DP a b c d e f g
+        buffer::AbstractVector{UInt8}                # storage for current digit values
+        usDelay::Real                                # duration of one active digit
+        inverted_digits::Bool                        # if digit pins states must be inverted, i.e. 1 means LOW pin state
+        inverted_sectors::Bool                       # if sectors pins' states must be inverted, i.e. 1 means LOW pin state
+        decode_mode::UInt8                           # current decode mode for digits, 0b00000001 - only first digit is in decode mode
+        intensity::Int                               # value from 1 to 16, brightness controlled by pulse-width
+        limit::Int                                   # current number of digits to show
+    end
+"""
+mutable struct DisplayDirect <: AbstractNumDisplay where IN <: Union{Int,Nothing}
+    digits_pins::AbstractVector{IN}
+    sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN} # DP a b c d e f g
     buffer::AbstractVector{UInt8}
     usDelay::Real
     inverted_digits::Bool
@@ -13,15 +23,51 @@ mutable struct DisplayDirect <: AbstractNumDisplay
     limit::Int
 end
 
-scan_rate(d::DisplayDirect) = ceil(Int, 10^6 / d.usDelay) # Hz
-size(d::DisplayDirect) = length(d.digits_pins)
+"""
+    function DisplayDirect(
+        digits_pins::AbstractVector{IN},
+        sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN};
+        scan_rate::Real = 800, # Hz
+        common_cathode::Bool = false
+    ) where IN <: Union{Int,Nothing}
 
+Creates numerical display device controlled directly with the RaspberryPi pins.
+The number of display digits equal to `digits_pins` count.
+`DisplayDirect` stores its states in internal `buffer` and creates the pulse-width wave
+ to show digits on a physical device.
+
+Initial state of display:
+- **shutdown mode** on. Use method `shutdown_mode_off()` to activate the display before the first use.
+- **test mode** off.
+- **decode mode** off for all digits.
+- **limit** is equal to all available digits, see `size()`
+- **intensity** = 5
+- `buffer` is zero for all digits. 
+
+## Arguments
+
+- `digits_pins` : Vector of GPIO pin numbers connected to common anode or cathode.
+    The first pin in array manages the less significant digit of display.
+    The values `nothing` is also possible here which means that the digit will not be used.
+    The `nothing` value is not typically used.
+- `sectors_pins` : Tuple of length 8 consisting of GPIO numbers controlling
+    the states of 8 sectors.
+    The sequence of pins is the following: DP (dot), A, B, C, D, E, F, G.
+    This corresponds to the sequence of bits (starting from most significant) in `buffer`.
+- `scan_rate` : refresh rate of digits in Hz. 
+    The digits in display are controlled by impulses of `digits_pins`. 
+    This argument sets the width of one impuls.
+    If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
+    The default value is 800 Hz.
+- `common_cathod` : set `true` if you use common cathod display or `false` for common anode.
+    This option inverts `digit_pins` or `sectors_pins` states.
+"""
 function DisplayDirect(
-    digits_pins::AbstractVector{Int},
-    sectors_pins::Tuple{Union{Int,Nothing},Int,Int,Int,Int,Int,Int,Int};
+    digits_pins::AbstractVector{IN},
+    sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN};
     scan_rate::Real = 800, # Hz
     common_cathode::Bool = false
-)
+) where IN <: Union{Int,Nothing}
     @assert 1 <= length(digits_pins) <= 8 "The package supports up to 8 digits, got $(length(digits_pins))"
 
     # for common anode
@@ -59,27 +105,59 @@ function DisplayDirect(
         inverted_sectors,
         decode_mode,
         5, # default intensity
-        4 # default limit
+        length(digits_pins) # default limit
     )
 end
+
+scan_rate(d::DisplayDirect) = ceil(Int, 10^6 / d.usDelay) # Hz
+
+size(d::DisplayDirect) = length(d.digits_pins)
 
 # update wave based on buffer
 function generate_wave(d::DisplayDirect)
     # create new wave based on d.buffer
     # number of pulses is equal to limit
     pulse = PiGPIOC.gpioPulse_t[]
+    
+    # set pause after each blink
+    inactivePeriod = ceil(Int, d.usDelay * (1 - d.intensity / 16))
+    gpioOffPause = 0x0
+    gpioOnPause = 0x0
+    for j in 1:d.limit
+        if !isnothing(d.digits_pins[j])
+            if d.inverted_digits
+                gpioOnPause |= 1 << d.digits_pins[j]
+            else
+                gpioOffPause |= 1 << d.digits_pins[j] # turn off all digit pins 
+            end
+        end
+    end
+    #=
+    for j in 8:(-1):1
+        if !isnothing(d.sectors_pins[j])
+            if d.inverted_sectors
+                gpioOnPause |= 1 << d.sectors_pins[j]
+            else
+                gpioOffPause |= 1 << d.sectors_pins[j]
+            end
+        end
+    end
+    =#
+
+    # set active state
     activePeriod = ceil(Int, d.usDelay * d.intensity / 16)
-    inactivePeriod = ceil(Int, d.usDelay * (1 - d.intensity / 16) * d.limit)
     for i in 1:d.limit
-        gpioOn = 0
-        gpioOff = 0
+        gpioOn = 0x0
+        gpioOff = 0x0
 
         # digits
         for j in 1:d.limit
-            if xor(i == j, d.inverted_digits)
-                gpioOn |= 1 << d.digits_pins[j]
-            else
-                gpioOff |= 1 << d.digits_pins[j]
+            if !isnothing(d.digits_pins[j])
+                if xor(i == j, d.inverted_digits)
+                    gpioOn |= 1 << d.digits_pins[j]
+                else
+                    gpioOff |= 1 << d.digits_pins[j]
+                end
             end
         end
         
@@ -97,37 +175,21 @@ function generate_wave(d::DisplayDirect)
         end
 
         for j in 8:(-1):1
-            if xor(value % 2 == 1, d.inverted_sectors)
-                gpioOn |= 1 << d.sectors_pins[j]
-            else
-                gpioOff |= 1 << d.sectors_pins[j]
+            if !isnothing(d.sectors_pins[j])
+                if xor(value % 2 == 1, d.inverted_sectors)
+                    gpioOn |= 1 << d.sectors_pins[j]
+                else
+                    gpioOff |= 1 << d.sectors_pins[j]
+                end
             end
             value >>= 1
         end
 
         push!(pulse, PiGPIOC.gpioPulse_t(gpioOn, gpioOff, activePeriod)) # on, off, usDelay
+        push!(pulse, PiGPIOC.gpioPulse_t(gpioOnPause, gpioOffPause, inactivePeriod))
     end
 
-    # set pause after each blink
-    gpioOffPause = 0x0
-    gpioOnPause = 0x0
-    for j in 1:d.limit
-        if d.inverted_digits
-            gpioOnPause |= 1 << d.digits_pins[j]
-        else
-            gpioOffPause |= 1 << d.digits_pins[j] # turn off all digit pins 
-        end
-    end
-    for j in 8:(-1):1
-        if d.inverted_sectors
-            gpioOnPause |= 1 << d.sectors_pins[j]
-        else
-            gpioOffPause |= 1 << d.sectors_pins[j]
-        end
-    end
-    push!(pulse, PiGPIOC.gpioPulse_t(gpioOnPause, gpioOffPause, inactivePeriod))
-
-    PiGPIOC.gpioWaveAddGeneric(d.limit + 1, pulse)
+    PiGPIOC.gpioWaveAddGeneric(d.limit * 2, pulse)
     wave_id = PiGPIOC.gpioWaveCreate()
     if wave_id < 0
         # return Upon success a wave id greater than or equal to 0 is returned, 
@@ -139,33 +201,13 @@ function generate_wave(d::DisplayDirect)
     return wave_id
 end
 
-# stop previous (if active) and run
-function run_wave(wave_id::Int)
-    # get old
-    old_wave_id = PiGPIOC.gpioWaveTxAt()
+"""
+    function update(d::DisplayDirect)
 
-    # run new wave when possible
-    ret_code = PiGPIOC.gpioWaveTxSend(wave_id, PiGPIOC.PI_WAVE_MODE_REPEAT_SYNC)
-    if ret_code < 0
-        # return the number of DMA control blocks in the waveform if OK, 
-        # otherwise PI_BAD_WAVE_ID, or PI_BAD_WAVE_MODE
-        throw("Error in 'PiGPIOC.gpioWaveCreate()' with code: $(ret_code)")
-    end
-    
-    # safe delete old wave
-    no_old_wave = old_wave_id == PiGPIOC.PI_NO_TX_WAVE || # 9999
-        old_wave_id == PiGPIOC.PI_WAVE_NOT_FOUND # 9998
-    if !no_old_wave
-        while PiGPIOC.gpioWaveTxAt() != wave_id
-            # wait for starting new wave
-        end
-        PiGPIOC.gpioWaveDelete(old_wave_id)
-    end
-
-    return nothing
-end
-
-# generate and run if in normal mode
+Generates a sequence of pulses based on buffer, decode_mode, intensity, limit, and runs pulses repeatedly.
+The function is used internally after buffer changes.
+If a display is in test mode or shutdown mode, the function does nothing. 
+"""
 function update(d::DisplayDirect)
     if PiGPIOC.gpioWaveTxBusy() == 1
         wave_id = generate_wave(d)
@@ -207,8 +249,8 @@ function test_mode_on(d::DisplayDirect)
     PiGPIOC.gpioWrite.(d.sectors_pins, d.inverted_sectors ? 0 : 1) # inverted_sectors = true
 end
 
-function set_limit(d::DisplayDirect, limit::Int = 8)
-    @assert 1 <= limit <= 8 "limit must be between 1 and 8, got $limit"
+function set_limit(d::DisplayDirect, limit::Int = size(d))
+    @assert 1 <= limit <= size(d) "limit must be between 1 and $(size(d)), got $limit"
     d.limit = limit
 
     update(d)
@@ -232,7 +274,7 @@ end
 function write_digit(
     d::DisplayDirect,
     value::UInt8,
-    position::Int # starting from less significant
+    position::Int
 )
     @assert 1 <= position <= 8 "position must be between 1 and 8, got $position"
     d.buffer[position] = value

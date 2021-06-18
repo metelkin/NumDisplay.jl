@@ -1,5 +1,168 @@
 abstract type AbstractNumDisplay end
 
+### low level methods
+
+"""
+    scan_rate(d::AbstractNumDisplay)
+Getter to display actual refresh rate.
+
+## Return
+
+- `Int` value in Hz 
+"""
+function scan_rate(d::AbstractNumDisplay)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    size(d::AbstractNumDisplay)
+Getter to show the maximal number of digits available for the display.
+This is equal to the number of `digits_pins`.
+"""
+function size(d::AbstractNumDisplay) 
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    shutdown_mode_off(d::AbstractNumDisplay)
+
+Sets the normal mode, i.e. display digits.
+It should be run after initialization of device.
+"""
+function shutdown_mode_off(d::AbstractNumDisplay)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    shutdown_mode_on(d::AbstractNumDisplay)
+
+In shutdown mode you can update digits values and set different settings but nothing will be shown.
+Shutdown can be used to save power or as an alarm to flash the display by
+successively entering and leaving shutdown mode.
+"""
+function shutdown_mode_on(d::AbstractNumDisplay)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    function test_mode_off(d::AbstractNumDisplay)
+
+Sets the normal mode, i.e. display digits.
+"""
+function test_mode_off(d::AbstractNumDisplay)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    function test_mode_on(d::AbstractNumDisplay)
+
+Display-test mode turns all LEDs on.
+Test mode overrides shutdown mode. Display remain in display-test mode
+until the display is reconfigured for normal operation.
+"""
+function test_mode_on(d::AbstractNumDisplay)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    function set_limit(d::AbstractNumDisplay, limit::Int = size(d))
+
+The function sets how many digits are displayed.
+Since the number of scanned digits affects
+the display brightness, the scan-limit register should
+not be used to blank portions of the display.
+
+The default value equal to the maximal value.
+
+## Arguments
+
+- `d` : device instance
+- `limit` : number of active digits, from 1 to size(d)
+    1 means only digit 1 is shown. 4 meand 8 digits will be shown.
+"""
+function set_limit(d::AbstractNumDisplay, limit::Int = size(d))
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    function decode_mode(d::AbstractNumDisplay, decode::UInt8 = 0b1111_1111)
+
+The decode-mode register sets BCD code (0-9, E, H,
+L, P, and -) or no-decode operation for each digit. 
+
+When the code B decode mode is used, the decoder
+looks only at the lower nibble of the data in the digit
+registers (D4–D1), disregarding bits D5–D7.
+D8 sets the decimal point (DP).
+
+When no-decode is selected, data bits D8–D1
+correspond to the segment lines
+
+all digits in decode mode => 0xff = 0b1111_1111
+all digits in none-decode mode => 0x00 = 0b0000_0000
+first decode other none mode => 0x01 = 0b0000_0001
+
+## Arguments
+
+- `d` : device instance
+- `decode` : Each bit in the register corresponds to one digit. A logic high
+    selects code decoding while logic low bypasses the decoder.
+"""
+function decode_mode(d::AbstractNumDisplay, decode::UInt8 = 0b1111_1111)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    function set_intensity(d::AbstractNumDisplay, intensity::Int = 16)
+
+Digital control of display brightness is provided by an
+internal pulse-width modulator.
+
+## Arguments
+
+- `d` : device instance
+- `intensity` : the value from 1 to 16 controlling the brighness. 
+    The modulator scales the average segment current in 16 steps.
+"""
+function set_intensity(d::AbstractNumDisplay, intensity::Int = 16)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+"""
+    write_digit(
+        d::AbstractNumDisplay,
+        value::UInt8,
+        position::Int
+    )
+
+Writes a digit to the position. The result of the execution is changing one digit.
+
+The result will depend on decode mode, see `decode_mode()` function.
+The most significant bit sets the DP (dot) state.
+
+In non-decode mode the bits 7-0 manage the sectors a, b, c, d, e, f, g.
+
+In decode mode only bits 3-0 play a role. The sequence of numbers is the following: 0,1,2,3,4,5,6,7,8,9,-,E,H,L,P,blank
+
+## Arguments
+
+- `d` : object representing display device
+
+- `value` : `UInt8` value updating the buffer value.
+
+- `position` : number of digit to write starting from 1 which mean least significant digit.
+    The maximal value depends on available digits, so it should be `<= length(indicator.digit_pins)`
+"""
+function write_digit(
+    d::AbstractNumDisplay,
+    value::UInt8,
+    position::Int # starting from less significant
+)
+    throw("Method is not applicable for $(typeof(d)) type")
+end
+
+### high level methods
+
 """
     write_number(
         indicator::AbstractNumDisplay,

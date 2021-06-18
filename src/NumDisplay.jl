@@ -8,9 +8,8 @@ export DisplaySPI, DisplayDirect
 
 # low level
 export scan_rate, decode_mode, set_intensity, set_limit, shutdown_mode_on, shutdown_mode_off,
-    test_mode_on, test_mode_off, write_digit
-
-# update, clean, stop, empty_digit
+    test_mode_on, test_mode_off, write_digit,
+    update
 
 # high level
 export write_number, write_symbols

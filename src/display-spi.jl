@@ -49,7 +49,7 @@ function spiWrite_bytes(d::DisplaySPI, data::AbstractArray{UInt8})
 end
 
 """
-scan rate = 800 Hz (500-1300) from docs
+scan rate = 800 Hz (500-1300) from chip docs
 """
 scan_rate(::DisplaySPI) = 800
 
@@ -57,20 +57,11 @@ size(d::DisplaySPI) = 8
 
 ### low-level operations
 
-"""
-all digits in decode mode => 0xff = 0b1111_1111
-all digits free mode => 0x00 = 0b0000_0000
-first decode other free mode => 0x01 = 0b0000_0001
-"""
 function decode_mode(d::DisplaySPI, decode::UInt8 = 0b1111_1111)
     data = [0b0000_1001, decode]
     spiWrite_bytes(d, data)
 end
 
-"""
-maximal intensity => 16
-minimal intensity => 1
-"""
 function set_intensity(d::DisplaySPI, intensity::Int = 16)
     @assert 1 <= intensity <= 16 "intensity must be between 1 and 16, got $intensity"
 
@@ -78,11 +69,6 @@ function set_intensity(d::DisplaySPI, intensity::Int = 16)
     spiWrite_bytes(d, data)
 end
 
-"""
-Set how many digits will be visible starting from less significant
-1 means only digit 1 is shown
-8 meand all 8 digits will be shown
-"""
 function set_limit(d::DisplaySPI, limit::Int = 8)
     @assert 1 <= limit <= 8 "limit must be between 1 and 8, got $limit"
 
