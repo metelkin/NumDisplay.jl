@@ -1,7 +1,7 @@
 """
-    mutable struct DisplayDirect <: AbstractNumDisplay where IN <: Union{Int,Nothing}
-        digits_pins::AbstractVector{IN}              # pins' numbers to control digit
-        sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN} # pins' number to control sectors: DP a b c d e f g
+    mutable struct DisplayDirect <: AbstractNumDisplay
+        digits_pins::AbstractVector{Int}              # pins' numbers to control digit
+        sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int} # pins' number to control sectors: DP a b c d e f g
         buffer::AbstractVector{UInt8}                # storage for current digit values
         usDelay::Real                                # duration of one active digit
         inverted_digits::Bool                        # if digit pins states must be inverted, i.e. 1 means LOW pin state
@@ -11,9 +11,9 @@
         limit::Int                                   # current number of digits to show
     end
 """
-mutable struct DisplayDirect <: AbstractNumDisplay where IN <: Union{Int,Nothing}
-    digits_pins::AbstractVector{IN}
-    sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN} # DP a b c d e f g
+mutable struct DisplayDirect <: AbstractNumDisplay
+    digits_pins::AbstractVector{Int}
+    sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int} # DP a b c d e f g
     buffer::AbstractVector{UInt8}
     usDelay::Real
     inverted_digits::Bool
@@ -25,11 +25,11 @@ end
 
 """
     function DisplayDirect(
-        digits_pins::AbstractVector{IN},
-        sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN};
+        digits_pins::AbstractVector{Int},
+        sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int};
         scan_rate::Real = 800, # Hz
         common_cathode::Bool = false
-    ) where IN <: Union{Int,Nothing}
+    )
 
 Creates numerical display device controlled directly with the RaspberryPi pins.
 The number of display digits equal to `digits_pins` count.
@@ -48,12 +48,12 @@ Initial state of display:
 
 - `digits_pins` : Vector of GPIO pin numbers connected to common anode or cathode.
     The first pin in array manages the less significant digit of display.
-    The values `nothing` is also possible here which means that the digit will not be used.
-    The `nothing` value is not typically used.
+    The value `-1` is also possible here which means that the digit will not be used.
 - `sectors_pins` : Tuple of length 8 consisting of GPIO numbers controlling
     the states of 8 sectors.
     The sequence of pins is the following: DP (dot), A, B, C, D, E, F, G.
     This corresponds to the sequence of bits (starting from most significant) in `buffer`.
+    The value `-1` is also possible here which means that the sector will not be used.
 - `scan_rate` : refresh rate of digits in Hz. 
     The digits in display are controlled by impulses of `digits_pins`. 
     This argument sets the width of one impuls.
@@ -63,11 +63,11 @@ Initial state of display:
     This option inverts `digit_pins` or `sectors_pins` states.
 """
 function DisplayDirect(
-    digits_pins::AbstractVector{IN},
-    sectors_pins::Tuple{IN,IN,IN,IN,IN,IN,IN,IN};
+    digits_pins::AbstractVector{Int},
+    sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int};
     scan_rate::Real = 800, # Hz
     common_cathode::Bool = false
-) where IN <: Union{Int,Nothing}
+)
     @assert 1 <= length(digits_pins) <= 8 "The package supports up to 8 digits, got $(length(digits_pins))"
 
     # for common anode
@@ -88,10 +88,10 @@ function DisplayDirect(
     usDelay = 10^6 / scan_rate # conversion to us
 
     # init pins
-    PiGPIOC.gpioSetMode.(digits_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(digits_pins, 0)
-    PiGPIOC.gpioSetMode.(sectors_pins, PiGPIOC.PI_OUTPUT)
-    PiGPIOC.gpioWrite.(sectors_pins, 0)
+    PiGPIOC.gpioSetMode(digits_pins, PiGPIOC.PI_OUTPUT)
+    PiGPIOC.gpioWrite(digits_pins, 0)
+    PiGPIOC.gpioSetMode(sectors_pins, PiGPIOC.PI_OUTPUT)
+    PiGPIOC.gpioWrite(sectors_pins, 0)
 
     buffer = fill(0b00000000, length(digits_pins))
     decode_mode = 0b00000000
@@ -124,7 +124,7 @@ function generate_wave(d::DisplayDirect)
     gpioOffPause = 0x0
     gpioOnPause = 0x0
     for j in 1:d.limit
-        if !isnothing(d.digits_pins[j])
+        if d.digits_pins[j] >= 0
             if d.inverted_digits
                 gpioOnPause |= 1 << d.digits_pins[j]
             else
@@ -132,17 +132,6 @@ function generate_wave(d::DisplayDirect)
             end
         end
     end
-    #=
-    for j in 8:(-1):1
-        if !isnothing(d.sectors_pins[j])
-            if d.inverted_sectors
-                gpioOnPause |= 1 << d.sectors_pins[j]
-            else
-                gpioOffPause |= 1 << d.sectors_pins[j]
-            end
-        end
-    end
-    =#
 
     # set active state
     activePeriod = ceil(Int, d.usDelay * d.intensity / 16)
@@ -152,7 +141,7 @@ function generate_wave(d::DisplayDirect)
 
         # digits
         for j in 1:d.limit
-            if !isnothing(d.digits_pins[j])
+            if d.digits_pins[j] >= 0
                 if xor(i == j, d.inverted_digits)
                     gpioOn |= 1 << d.digits_pins[j]
                 else
@@ -175,7 +164,7 @@ function generate_wave(d::DisplayDirect)
         end
 
         for j in 8:(-1):1
-            if !isnothing(d.sectors_pins[j])
+            if d.sectors_pins[j] >= 0
                 if xor(value % 2 == 1, d.inverted_sectors)
                     gpioOn |= 1 << d.sectors_pins[j]
                 else
@@ -228,8 +217,8 @@ function shutdown_mode_on(d::DisplayDirect)
     PiGPIOC.gpioWaveTxStop()
         
     # clear pins
-    PiGPIOC.gpioWrite.(d.digits_pins, 0)
-    PiGPIOC.gpioWrite.(d.sectors_pins, 0)
+    PiGPIOC.gpioWrite(d.digits_pins, 0)
+    PiGPIOC.gpioWrite(d.sectors_pins, 0)
 end
 
 function test_mode_off(d::DisplayDirect)
@@ -245,8 +234,8 @@ function test_mode_on(d::DisplayDirect)
     PiGPIOC.gpioWaveTxStop()
 
     # clear pins
-    PiGPIOC.gpioWrite.(d.digits_pins, d.inverted_digits ? 0 : 1) # inverted_digits = false
-    PiGPIOC.gpioWrite.(d.sectors_pins, d.inverted_sectors ? 0 : 1) # inverted_sectors = true
+    PiGPIOC.gpioWrite(d.digits_pins, d.inverted_digits ? 0 : 1) # inverted_digits = false
+    PiGPIOC.gpioWrite(d.sectors_pins, d.inverted_sectors ? 0 : 1) # inverted_sectors = true
 end
 
 function set_limit(d::DisplayDirect, limit::Int = size(d))
@@ -256,7 +245,7 @@ function set_limit(d::DisplayDirect, limit::Int = size(d))
     update(d)
     # set empty states
     pins_to_free = (d.limit+1):size(d)
-    PiGPIOC.gpioWrite.(d.digits_pins[pins_to_free], !d.inverted_digits ? 0 : 1)
+    PiGPIOC.gpioWrite(d.digits_pins[pins_to_free], !d.inverted_digits ? 0 : 1)
 end
 
 function decode_mode(d::DisplayDirect, decode::UInt8 = 0b1111_1111)
@@ -285,13 +274,13 @@ end
 #=
 function write_number(
     indicator::DisplayDirect,
-    digit_vector::AbstractArray{D}, # digit from 0 to 9
-    dp_position::Union{Int, Nothing} = nothing
-) where D <: Union{UInt8, Nothing}
+    digit_vector::AbstractArray{Int}, # digit from 0 to 9
+    dp_position::Int
+)
     # TODO: check digit_vector
     l = length(digit_vector)
     for i in 1:length(indicator.digits_pins)
-        if i > l || digit_vector[i] === nothing
+        if i > l || digit_vector[i] >= 0
             indicator.buffer[i] = empty_digit(indicator)
         else
             indicator.buffer[i] = NUM_TRANSLATOR[digit_vector[i]]
@@ -299,7 +288,7 @@ function write_number(
     end
 
     fill!(indicator.dp_buffer, 0b0)
-    if dp_position !== nothing && 1 <= dp_position <= length(indicator.digits_pins)
+    if dp_position >= 0 && 1 <= dp_position <= length(indicator.digits_pins)
         indicator.dp_buffer[dp_position] = 0b1
     end
 
