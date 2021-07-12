@@ -40,7 +40,7 @@ Initial state of display:
 - **shutdown mode** on. Use method `shutdown_mode_off()` to activate the display before the first use.
 - **test mode** off.
 - **decode mode** off for all digits.
-- **limit** is equal to all available digits, see `size()`
+- **limit** value is equal to all available digits, see `size()`
 - **intensity** = 5
 - `buffer` is zero for all digits. 
 
@@ -56,7 +56,7 @@ Initial state of display:
     The value `-1` is also possible here which means that the sector will not be used.
 - `scan_rate` : refresh rate of digits in Hz. 
     The digits in display are controlled by impulses of `digits_pins`. 
-    This argument sets the width of one impuls.
+    This argument sets the time period for display of one digit.
     If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is 800 Hz.
 - `common_cathod` : set `true` if you use common cathod display or `false` for common anode.
@@ -94,7 +94,6 @@ function DisplayDirect(
     PiGPIOC.gpioWrite(sectors_pins, 0)
 
     buffer = fill(0b00000000, length(digits_pins))
-    decode_mode = 0b00000000
 
     return DisplayDirect(
         digits_pins,
@@ -103,8 +102,8 @@ function DisplayDirect(
         usDelay,
         inverted_digits,
         inverted_sectors,
-        decode_mode,
-        5, # default intensity
+        0b00000000,         # decode_mode
+        5,                  # default intensity
         length(digits_pins) # default limit
     )
 end
@@ -194,7 +193,7 @@ end
     function update(d::DisplayDirect)
 
 Generates a sequence of pulses based on buffer, decode_mode, intensity, limit, and runs pulses repeatedly.
-The function is used internally after buffer changes.
+The function is used internally after buffer and modes changes.
 If a display is in test mode or shutdown mode, the function does nothing. 
 """
 function update(d::DisplayDirect)
