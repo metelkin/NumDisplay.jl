@@ -21,6 +21,7 @@ mutable struct DisplayDirect <: AbstractNumDisplay
     decode_mode::UInt8
     intensity::Int # 16 max
     limit::Int
+    test_mode::Bool
 end
 
 """
@@ -104,7 +105,8 @@ function DisplayDirect(
         inverted_sectors,
         0b00000000,         # decode_mode
         5,                  # default intensity
-        length(digits_pins) # default limit
+        length(digits_pins), # default limit,
+        false
     )
 end
 
@@ -189,6 +191,52 @@ function generate_wave(d::DisplayDirect)
     return wave_id
 end
 
+function generate_test_wave(d::DisplayDirect)
+    pulse = PiGPIOC.gpioPulse_t[]
+
+    # set active state
+    activePeriod = ceil(Int, d.usDelay)
+    for i in 1:size(d)
+        gpioOn = 0x0
+        gpioOff = 0x0
+
+        # digits
+        for j in 1:size(d)
+            if d.digits_pins[j] >= 0
+                if xor(i == j, d.inverted_digits)
+                    gpioOn |= 1 << d.digits_pins[j]
+                else
+                    gpioOff |= 1 << d.digits_pins[j]
+                end
+            end
+        end
+
+        # sectors
+        for j in 1:8
+            if d.sectors_pins[j] >= 0
+                if !d.inverted_sectors
+                    gpioOn |= 1 << d.sectors_pins[j]
+                else
+                    gpioOff |= 1 << d.sectors_pins[j]
+                end
+            end
+        end
+
+        push!(pulse, PiGPIOC.gpioPulse_t(gpioOn, gpioOff, activePeriod)) # on, off, usDelay
+    end
+
+    PiGPIOC.gpioWaveAddGeneric(size(d), pulse)
+    wave_id = PiGPIOC.gpioWaveCreate()
+    if wave_id < 0
+        # return Upon success a wave id greater than or equal to 0 is returned, 
+        # otherwise PI_EMPTY_WAVEFORM, PI_TOO_MANY_CBS, PI_TOO_MANY_OOL,
+        # or PI_NO_WAVEFORM_ID
+        throw("Error in 'PiGPIOC.gpioWaveCreate()' with code: $(wave_id)")
+    end
+
+    return wave_id
+end
+
 """
     function update(d::DisplayDirect)
 
@@ -197,8 +245,9 @@ The function is used internally after buffer and modes changes.
 If a display is in test mode or shutdown mode, the function does nothing. 
 """
 function update(d::DisplayDirect)
+    # do nothing in shutdown mode
     if PiGPIOC.gpioWaveTxBusy() == 1
-        wave_id = generate_wave(d)
+        wave_id = d.test_mode ? generate_test_wave(d) : generate_wave(d)
         run_wave(wave_id)
     end
 end
@@ -206,7 +255,7 @@ end
 function shutdown_mode_off(d::DisplayDirect)
     # do nothing in normal mode
     if PiGPIOC.gpioWaveTxBusy() == 0
-        wave_id = generate_wave(d)
+        wave_id = d.test_mode ? generate_test_wave(d) : generate_wave(d)
         run_wave(wave_id)
     end
 end
@@ -222,19 +271,18 @@ end
 
 function test_mode_off(d::DisplayDirect)
     # do nothing in normal mode
-    if PiGPIOC.gpioWaveTxBusy() == 0
-        wave_id = generate_wave(d)
-        run_wave(wave_id)
+    if d.test_mode
+        d.test_mode = false
+        update(d)
     end
 end
 
 function test_mode_on(d::DisplayDirect)
-    # stop current wave
-    PiGPIOC.gpioWaveTxStop()
-
-    # clear pins
-    PiGPIOC.gpioWrite(d.digits_pins, d.inverted_digits ? 0 : 1) # inverted_digits = false
-    PiGPIOC.gpioWrite(d.sectors_pins, d.inverted_sectors ? 0 : 1) # inverted_sectors = true
+    # do nothing in test mode
+    if !d.test_mode
+        d.test_mode = true
+        update(d)
+    end
 end
 
 function set_limit(d::DisplayDirect, limit::Int = size(d))
@@ -267,7 +315,10 @@ function write_digit(
     @assert 1 <= position <= 8 "position must be between 1 and 8, got $position"
     d.buffer[position] = value
 
-    update(d)
+    # update only in normal mode
+    if !d.test_mode
+        update(d)
+    end
 end
 
 #=
