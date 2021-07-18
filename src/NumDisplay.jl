@@ -17,8 +17,9 @@ export write_number, write_symbols
 include("decoding.jl")
 include("extend.jl")
 include("abstract-num-display.jl")
+include("display-no-buffer.jl")
 include("display-direct.jl")
-#include("display-bcd.jl")
+include("display-bcd.jl")
 include("display-spi.jl")
 
 end # module

@@ -4,6 +4,7 @@ println("Starting...")
 
 d = DisplayDirect([27, 22, 10, 9], (14, 15, 18, 23, 24, 25, 8, 7))
 shutdown_mode_off(d)
+decode_mode(d, 0x00)
 
 include("common-high-level-4.jl")
 
