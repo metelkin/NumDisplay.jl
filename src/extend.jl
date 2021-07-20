@@ -10,6 +10,12 @@ function PiGPIOC.gpioWrite(vector::NTuple{8,Int}, data::Int)
     end
 end
 
+function PiGPIOC.gpioWrite(vector::NTuple{5,Int}, data::Int)
+    for x in vector
+        x >= 0 && PiGPIOC.gpioWrite(x, data)
+    end
+end
+
 function PiGPIOC.gpioSetMode(vector::AbstractVector{Int}, data::Int)
     for x in vector
         x >= 0 && PiGPIOC.gpioSetMode(x, data)
@@ -17,6 +23,12 @@ function PiGPIOC.gpioSetMode(vector::AbstractVector{Int}, data::Int)
 end
 
 function PiGPIOC.gpioSetMode(vector::NTuple{8,Int}, data::Int)
+    for x in vector
+        x >= 0 && PiGPIOC.gpioSetMode(x, data)
+    end
+end
+
+function PiGPIOC.gpioSetMode(vector::NTuple{5,Int}, data::Int)
     for x in vector
         x >= 0 && PiGPIOC.gpioSetMode(x, data)
     end

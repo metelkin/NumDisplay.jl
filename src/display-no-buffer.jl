@@ -42,7 +42,7 @@ function generate_wave(d::DisplayNoBuffer)
         end
         
         # if decode mode than 1
-        decode_i = (d.decode_mode >> (i - 1)) % 2
+        decode_i = (decode_mode(d) >> (i - 1)) % 2
 
         # sectors
         buffer_i = d.buffer[i]
@@ -54,7 +54,7 @@ function generate_wave(d::DisplayNoBuffer)
             value += dp_state << 7
         end
 
-        for j in 8:(-1):1
+        for j in 1:8
             if d.sectors_pins[j] >= 0
                 if xor(value % 2 == 1, d.inverted_sectors)
                     gpioOn |= 1 << d.sectors_pins[j]

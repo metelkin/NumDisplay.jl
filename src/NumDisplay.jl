@@ -4,7 +4,7 @@ using PiGPIOC
 
 # constructors
 #, DisplayBCD
-export DisplaySPI, DisplayDirect
+export DisplaySPI, DisplayDirect, DisplayBCD
 
 # low level
 export scan_rate, decode_mode, set_intensity, set_limit, shutdown_mode_on, shutdown_mode_off,

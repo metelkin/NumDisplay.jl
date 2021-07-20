@@ -1,7 +1,7 @@
 """
     mutable struct DisplayDirect <: DisplayNoBuffer
-        digits_pins::AbstractVector{Int}              # pins' numbers to control digit
-        sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int} # pins' number to control sectors: DP a b c d e f g
+        digits_pins::AbstractVector{Int}             # pins' numbers to control digit: [LSD ... MSD]
+        sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int} # pins' number to control sectors: (g,f,e,d,c,b,a,DP) | (d0,d1,d2,d3,-,-,-,DP)
         buffer::AbstractVector{UInt8}                # storage for current digit values
         usDelay::Real                                # duration of one active digit
         inverted_digits::Bool                        # if digit pins states must be inverted, i.e. 1 means LOW pin state
@@ -13,7 +13,7 @@
 """
 mutable struct DisplayDirect <: DisplayNoBuffer
     digits_pins::AbstractVector{Int}
-    sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int} # DP a b c d e f g
+    sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int}
     buffer::AbstractVector{UInt8}
     usDelay::Real
     inverted_digits::Bool
@@ -40,7 +40,7 @@ The number of display digits equal to `digits_pins` count.
 Initial state of display:
 - **shutdown mode** on. Use method `shutdown_mode_off()` to activate the display before the first use.
 - **test mode** off.
-- **decode mode** off for all digits.
+- **decode mode** is on for all digits.
 - **limit** value is equal to all available digits, see `size()`
 - **intensity** = 5
 - `buffer` is zero for all digits. 
@@ -48,20 +48,20 @@ Initial state of display:
 ## Arguments
 
 - `digits_pins` : Vector of GPIO pin numbers connected to common anode or cathode.
-    The first pin in array manages the less significant digit of display.
+    The first pin in array manages the less significant digit (LSD) of display.
     The value `-1` is also possible here which means that the digit will not be used.
 - `sectors_pins` : Tuple of length 8 consisting of GPIO numbers controlling
     the states of 8 sectors.
-    The sequence of pins is the following: DP (dot), A, B, C, D, E, F, G.
+    The sequence of pins is the following: (g, f, e, d, c, b, a, DP).
     This corresponds to the sequence of bits (starting from most significant) in `buffer`.
-    The value `-1` is also possible here which means that the sector will not be used.
+    The value `-1` is also possible here which means that the pin will not be used.
 - `scan_rate` : refresh rate of digits in Hz. 
     The digits in display are controlled by impulses of `digits_pins`. 
     This argument sets the time period for display of one digit.
     If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is 800 Hz.
 - `common_cathod` : set `true` if you use common cathod display or `false` for common anode.
-    This option inverts `digit_pins` or `sectors_pins` states.
+    This option inverts `digit_pins` or `sectors_pins` active states.
 """
 function DisplayDirect(
     digits_pins::AbstractVector{Int},
@@ -109,6 +109,8 @@ function DisplayDirect(
         false
     )
 end
+
+decode_mode(::DisplayDirect) = d.decode_mode
 
 # generate test wave with all sectors are active and maximal intensity
 function generate_test_wave(d::DisplayDirect)
