@@ -110,7 +110,7 @@ function DisplayDirect(
     )
 end
 
-decode_mode(::DisplayDirect) = d.decode_mode
+decode(::DisplayDirect) = d.decode_mode
 
 # generate test wave with all sectors are active and maximal intensity
 function generate_test_wave(d::DisplayDirect)

@@ -42,7 +42,7 @@ function generate_wave(d::DisplayNoBuffer)
         end
         
         # if decode mode than 1
-        decode_i = (decode_mode(d) >> (i - 1)) % 2
+        decode_i = (decode(d) >> (i - 1)) % 2
 
         # sectors
         buffer_i = d.buffer[i]

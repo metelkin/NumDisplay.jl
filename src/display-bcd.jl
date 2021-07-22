@@ -39,7 +39,8 @@ end
         digits_pins::AbstractVector{Int},
         sectors_pins::Tuple{Int,Int,Int,Int,Int}, # A, B, C, D, DP
         scan_rate::Real = 800,                    # Hz
-        common_cathode::Bool = false
+        inverted_digits::Bool = false
+        inverted_sectors::Bool = false
     )
 
 Creates device representing numerical display with several digits under control of the BCD chip.
@@ -59,20 +60,18 @@ The number of display digits equal to `digits_pins` count.
     If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is 800 Hz.
 
-- `common_cathod` : set `true` if you use common cathod display or `false` for common anode.
-    This option inverts `digit_pins` or `sectors_pins` active states.
+- `inverted_digits` : 
+
+- `inverted_sectors` :
 """
 function DisplayBCD(
     digits_pins::AbstractVector{Int},
     sectors_pins::Tuple{Int,Int,Int,Int,Int},
     scan_rate::Real = 800, # Hz
-    common_cathode::Bool = false
+    inverted_digits::Bool = false,
+    inverted_sectors::Bool = false
 )
     @assert 1 <= length(digits_pins) <= 8 "The package supports up to 8 digits, got $(length(digits_pins))"
-
-    # for common anode
-    inverted_digits::Bool = common_cathode
-    inverted_sectors::Bool = !common_cathode
 
     if PiGPIOC.gpioInitialise() < 0
         throw("pigpio initialisation failed.")
@@ -108,4 +107,4 @@ function DisplayBCD(
     )
 end
 
-decode_mode(::DisplayBCD) = 0b11111111
+decode(::DisplayBCD) = 0b00000000
