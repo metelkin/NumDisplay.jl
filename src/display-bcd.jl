@@ -108,3 +108,57 @@ function DisplayBCD(
 end
 
 decode(::DisplayBCD) = 0b00000000
+
+# this function is not avalable for BCD displays
+function decode_mode(d::DisplayBCD, decode::UInt8 = 0b1111_1111)
+    @warn "`decode_mode` method doesn't work for DisplayBCD"
+end
+
+# generate test wave with all sectors are active and maximal intensity
+function generate_test_wave(d::DisplayBCD)
+    pulse = PiGPIOC.gpioPulse_t[]
+
+    # set active state
+    activePeriod = ceil(Int, d.usDelay)
+    for i in 1:size(d)
+        gpioOn = 0x0
+        gpioOff = 0x0
+
+        # digits
+        for j in 1:size(d)
+            if d.digits_pins[j] >= 0
+                if xor(i == j, d.inverted_digits)
+                    gpioOn |= 1 << d.digits_pins[j]
+                else
+                    gpioOff |= 1 << d.digits_pins[j]
+                end
+            end
+        end
+
+        # sectors
+        value = 0b1000_1000 # representation of 8. = 0x1000
+        for j in 1:8
+            if d.sectors_pins[j] >= 0
+                if xor(value % 2 == 1, d.inverted_sectors)
+                    gpioOn |= 1 << d.sectors_pins[j]
+                else
+                    gpioOff |= 1 << d.sectors_pins[j]
+                end
+            end
+            value >>= 1
+        end
+        
+        push!(pulse, PiGPIOC.gpioPulse_t(gpioOn, gpioOff, activePeriod)) # on, off, usDelay
+    end
+
+    PiGPIOC.gpioWaveAddGeneric(size(d), pulse)
+    wave_id = PiGPIOC.gpioWaveCreate()
+    if wave_id < 0
+        # return Upon success a wave id greater than or equal to 0 is returned, 
+        # otherwise PI_EMPTY_WAVEFORM, PI_TOO_MANY_CBS, PI_TOO_MANY_OOL,
+        # or PI_NO_WAVEFORM_ID
+        throw("Error in 'PiGPIOC.gpioWaveCreate()' with code: $(wave_id)")
+    end
+
+    return wave_id
+end
