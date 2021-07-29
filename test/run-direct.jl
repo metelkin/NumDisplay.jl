@@ -2,7 +2,7 @@ using NumDisplay
 
 println("Starting...")
 
-d = DisplayDirect([27, 22, 10, 9], (14, 15, 18, 23, 24, 25, 8, 7))
+d = DisplayDirect([27, 22, 10, 9], (7, 8, 25, 24, 23, 18, 15, 14), inverted_sectors = true)
 shutdown_mode_off(d)
 decode_mode(d, 0x00)
 

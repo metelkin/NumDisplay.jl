@@ -4,11 +4,8 @@ This method does not require any chip. Each segment in digit is managed by its o
 It can serve the common-anode and common-cathod display.
 
 The method requires 7 pins to display decimal and additionally one pin per digit.
-For example 4-digit-display requires 7 + 4 = 11 GPIO pins. 
-8-digit-display requires 7 + 8 = 15 GPIO pins.
-
-If you use dot on display you need the additional pin.
-For example 4-digit-display requires 7 + 1 + 4 = 12 GPIO pins. 
+For example 4-digit-display requires 8 + 4 = 12 GPIO pins. 
+8-digit-display requires 8 + 8 = 15 GPIO pins.
 
 ## Usage
 
@@ -18,26 +15,28 @@ For example 4-digit-display requires 7 + 1 + 4 = 12 GPIO pins.
 using NumericDisplay
 d = DisplayDirect(
     [       # pins to on/off digits
-        5, # less significant decimal digit
-        6,
-        13,
-        19   # most significant decimal digit
+        27, # less significant decimal digit
+        22,
+        10,
+        9   # most significant decimal digit
     ],
     (      # pins connected to segments
-        2, # a segment
-        3, # b
-        4, # c
-        17, # d
-        27, # e
-        22, # f
-        10 # g
+        7, # g segment
+        8, # f
+        25, # e
+        24, # d
+        23, # c
+        18, # b
+        15, # a
+        -1  # DP not used
     );
     inverted_sectors = true
 )
-
+shutdown_mode_off(d)
 write_number(d, 666) # display _666
+
 sleep(1)
-stop(d)              # display nothing
+shutdown_mode_on(d)              # display nothing
 ```
 
 **With dot**
@@ -50,24 +49,26 @@ d = DisplayDirect # pins to on/off digits
         10,
         9   # most significant decimal digit
     ],
-    (      # pins connected to segments
-        2, # a segment
-        3, # b
-        4, # c
-        17, # d
-        27, # e
-        22, # f
-        10 # g
-    );
-    11;     # pin to control dot
+    (       # pins connected to segments
+        7,  # g segment
+        8,  # f
+        25, # e
+        24, # d
+        23, # c
+        18, # b
+        15, # a
+        14  # DP pin
+    );   
     inverted_sectors = true
 )
+
+shutdown_mode_off(d)
 
 write_number(d, 666) # display _666
 sleep(1)
 write_number(d, 666, 2) # display _66.6
 sleep(1)
-stop(d)              # display nothing
+shutdown_mode_on(d)              # display nothing
 ```
 
 ## Circuit

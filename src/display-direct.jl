@@ -29,7 +29,8 @@ end
         digits_pins::AbstractVector{Int},
         sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int};
         scan_rate::Real = 800, # Hz
-        common_cathode::Bool = false
+        inverted_digits::Bool = false,
+        inverted_sectors::Bool = false
     )
 
 Creates numerical display device controlled directly with the RaspberryPi pins.
@@ -60,20 +61,17 @@ Initial state of display:
     This argument sets the time period for display of one digit.
     If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is 800 Hz.
-- `common_cathod` : set `true` if you use common cathod display or `false` for common anode.
-    This option inverts `digit_pins` or `sectors_pins` active states.
+- `inverted_digits` : This option inverts `digit_pins` active states.
+- `inverted_sectors` : This option inverts `sectors_pins` active states.
 """
 function DisplayDirect(
     digits_pins::AbstractVector{Int},
     sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int};
     scan_rate::Real = 800, # Hz
-    common_cathode::Bool = false
+    inverted_digits::Bool = false,
+    inverted_sectors::Bool = false
 )
     @assert 1 <= length(digits_pins) <= 8 "The package supports up to 8 digits, got $(length(digits_pins))"
-
-    # for common anode
-    inverted_digits::Bool = common_cathode
-    inverted_sectors::Bool = !common_cathode
 
     if PiGPIOC.gpioInitialise() < 0
         throw("pigpio initialisation failed.")
