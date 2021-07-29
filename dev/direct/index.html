@@ -1,48 +1,52 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Direct · NumDisplay Documentation</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">NumDisplay Documentation</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Direct</a><ul class="internal"><li><a class="tocitem" href="#Usage"><span>Usage</span></a></li><li><a class="tocitem" href="#Circuit"><span>Circuit</span></a></li></ul></li><li><a class="tocitem" href="../bcd/">BCD</a></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Direct</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Direct</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/metelkin/NumDisplay.jl/blob/master/docs/src/direct.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Direct-approach"><a class="docs-heading-anchor" href="#Direct-approach">Direct approach</a><a id="Direct-approach-1"></a><a class="docs-heading-anchor-permalink" href="#Direct-approach" title="Permalink"></a></h1><p>This method does not require any chip. Each segment in sector is managed by its own GPIO pin. It can serve the common-anode and common-cathod display.</p><p>The method requires 7 pins to display decimal and additionally one pin per sector. For example 4-sector-display requires 7 + 4 = 11 GPIO pins.  8-sector-display requires 7 + 8 = 15 GPIO pins.</p><p>If you use dot on display you need the additional pin. For example 4-sector-display requires 7 + 1 + 4 = 12 GPIO pins. </p><h2 id="Usage"><a class="docs-heading-anchor" href="#Usage">Usage</a><a id="Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Usage" title="Permalink"></a></h2><p><strong>Without dot</strong></p><pre><code class="language-julia">using NumericDisplay
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Direct · NumDisplay Documentation</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">NumDisplay Documentation</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Direct</a><ul class="internal"><li><a class="tocitem" href="#Usage"><span>Usage</span></a></li><li><a class="tocitem" href="#Circuit"><span>Circuit</span></a></li></ul></li><li><a class="tocitem" href="../bcd/">BCD</a></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Direct</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Direct</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/metelkin/NumDisplay.jl/blob/master/docs/src/direct.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Direct-approach"><a class="docs-heading-anchor" href="#Direct-approach">Direct approach</a><a id="Direct-approach-1"></a><a class="docs-heading-anchor-permalink" href="#Direct-approach" title="Permalink"></a></h1><p>This method does not require any chip. Each segment in digit is managed by its own GPIO pin. It can serve the common-anode and common-cathod display.</p><p>The method requires 7 pins to display decimal and additionally one pin per digit. For example 4-digit-display requires 8 + 4 = 12 GPIO pins.  8-digit-display requires 8 + 8 = 15 GPIO pins.</p><h2 id="Usage"><a class="docs-heading-anchor" href="#Usage">Usage</a><a id="Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Usage" title="Permalink"></a></h2><p><strong>Without dot</strong></p><pre><code class="language-julia hljs">using NumericDisplay
 d = DisplayDirect(
-    [       # pins to on/off sectors
-        5, # less significant decimal digit
-        6,
-        13,
-        19   # most significant decimal digit
-    ],
-    (      # pins connected to segments
-        2, # a segment
-        3, # b
-        4, # c
-        17, # d
-        27, # e
-        22, # f
-        10 # g
-    );
-    inverted_input = true
-)
-
-write_number(d, 666) # display _666
-sleep(1)
-stop(d)              # display nothing</code></pre><p><strong>With dot</strong></p><pre><code class="language-julia">using NumericDisplay
-d = DisplayDirect # pins to on/off sectors
+    [       # pins to on/off digits
         27, # less significant decimal digit
         22,
         10,
         9   # most significant decimal digit
     ],
     (      # pins connected to segments
-        2, # a segment
-        3, # b
-        4, # c
-        17, # d
-        27, # e
-        22, # f
-        10 # g
+        7, # g segment
+        8, # f
+        25, # e
+        24, # d
+        23, # c
+        18, # b
+        15, # a
+        -1  # DP not used
     );
-    11;     # pin to control dot
-    inverted_input = true
+    inverted_sectors = true
 )
+shutdown_mode_off(d)
+write_number(d, 666) # display _666
+
+sleep(1)
+shutdown_mode_on(d)              # display nothing</code></pre><p><strong>With dot</strong></p><pre><code class="language-julia hljs">using NumericDisplay
+d = DisplayDirect # pins to on/off digits
+        27, # less significant decimal digit
+        22,
+        10,
+        9   # most significant decimal digit
+    ],
+    (       # pins connected to segments
+        7,  # g segment
+        8,  # f
+        25, # e
+        24, # d
+        23, # c
+        18, # b
+        15, # a
+        14  # DP pin
+    );   
+    inverted_sectors = true
+)
+
+shutdown_mode_off(d)
 
 write_number(d, 666) # display _666
 sleep(1)
 write_number(d, 666, 2) # display _66.6
 sleep(1)
-stop(d)              # display nothing</code></pre><h2 id="Circuit"><a class="docs-heading-anchor" href="#Circuit">Circuit</a><a id="Circuit-1"></a><a class="docs-heading-anchor-permalink" href="#Circuit" title="Permalink"></a></h2><p><strong>Common anode and cathode scheme</strong></p><p><img src="../direct-scheme-anode.png" alt="direct-scheme-anode"/></p><p><strong>Notes</strong></p><ul><li>The scheme uses power from 3.3V signal pins. To use the external power you need to use NPN or MOSFET transistors.</li><li>If you use common anode, use <code>DisplayDirect(...; inverted_input=true, inverted_input=false)</code> in constructor.</li><li>If you use common cathode, use <code>DisplayDirect(...; inverted_input=false, inverted_input=true)</code> in constructor.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../bcd/">BCD »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 30 May 2021 11:25">Sunday 30 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+shutdown_mode_on(d)              # display nothing</code></pre><h2 id="Circuit"><a class="docs-heading-anchor" href="#Circuit">Circuit</a><a id="Circuit-1"></a><a class="docs-heading-anchor-permalink" href="#Circuit" title="Permalink"></a></h2><p><strong>Common anode and cathode scheme</strong></p><p><img src="../direct-scheme-anode.png" alt="direct-scheme-anode"/></p><p><strong>Notes</strong></p><ul><li>The scheme uses power from 3.3V signal pins. To use the external power you need to use NPN or MOSFET transistors.</li><li>If you use common anode, use <code>DisplayDirect(...; inverted_sectors=true, inverted_sectors=false)</code> in constructor.</li><li>If you use common cathode, use <code>DisplayDirect(...; inverted_sectors=false, inverted_sectors=true)</code> in constructor.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../bcd/">BCD »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Thursday 29 July 2021 10:17">Thursday 29 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
