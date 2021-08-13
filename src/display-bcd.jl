@@ -10,7 +10,7 @@ gpioWaveTxStop
 =#
 
 """
-    struct DisplayBCD <: DisplayNoBuffer
+    mutable struct DisplayBCD <: DisplayNoBuffer
         digits_pins::AbstractVector{Int}      # pin numbers to control digits: [LSD ... MSD]
         sectors_pins::Tuple{Int,Int,Int,Int,Int,Int,Int,Int}  # pin numbers for binary code: (d0,d1,d2,d3,-,-,-,DP)
         buffer::AbstractVector{UInt8}         # internal storage of digits values

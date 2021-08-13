@@ -23,7 +23,7 @@ For example 4-digits-display requires 4 + 1 + 4 = 9 GPIO pins.
 **Without dot**
 
 ```julia
-using NumericDisplay
+using NumDisplay
 d = DisplayBCD(
     [       # pins to on/off digits
         5,  # less significant decimal digit
@@ -50,7 +50,7 @@ shutdown_mode_on(d)              # display nothing
 **With dot**
 
 ```julia
-using NumericDisplay
+using NumDisplay
 d = DisplayBCD(
     [       # pins to on/off digits
         5, # less significant decimal digit

@@ -1,4 +1,4 @@
-# NumericDisplay
+# NumDisplay
 
 Raspberry Pi package for controlling the 7-segment numeric displays written in Julia.
 
@@ -6,7 +6,7 @@ The package supports several approaches:
 
 - Direct method does not use any chips transforming input but it requires more GPIO pins. See [DisplayDirect](https://metelkin.github.io/NumDisplay.jl/dev/direct/).
 - BCD is a Binary-Coded Decimal chip which can be used to manage display with several digits. See [DisplayBCD](https://metelkin.github.io/NumDisplay.jl/dev/bcd/).
-
+- SPI uses MAX7219/MAX7221 chip to control up to 8 digits 7-segment displays. See [DisplaySPI](https://metelkin.github.io/NumDisplay.jl/dev/spi/).
 
 ## Installation
 
