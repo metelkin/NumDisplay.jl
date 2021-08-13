@@ -2,6 +2,4 @@
 
 ## Circuit
 
-**Without dot**
-
-![bcd-scheme](./spi-scheme.png)
+![spi-scheme](./spi-scheme.png)
