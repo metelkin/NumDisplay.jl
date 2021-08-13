@@ -39,7 +39,7 @@ end
         digits_pins::AbstractVector{Int},
         sectors_pins::Tuple{Int,Int,Int,Int,Int}, # A, B, C, D, DP
         scan_rate::Real = 800,                    # Hz
-        inverted_digits::Bool = false
+        inverted_digits::Bool = false,
         inverted_sectors::Bool = false
     )
 
@@ -60,9 +60,9 @@ The number of display digits equal to `digits_pins` count.
     If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is 800 Hz.
 
-- `inverted_digits` : 
+- `inverted_digits` : This option inverts `digit_pins` active states.
 
-- `inverted_sectors` :
+- `inverted_sectors` : This option inverts `sectors_pins` active states.
 """
 function DisplayBCD(
     digits_pins::AbstractVector{Int},

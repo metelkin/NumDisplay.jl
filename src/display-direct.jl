@@ -51,17 +51,21 @@ Initial state of display:
 - `digits_pins` : Vector of GPIO pin numbers connected to common anode or cathode.
     The first pin in array manages the less significant digit (LSD) of display.
     The value `-1` is also possible here which means that the digit will not be used.
+
 - `sectors_pins` : Tuple of length 8 consisting of GPIO numbers controlling
     the states of 8 sectors.
     The sequence of pins is the following: (g, f, e, d, c, b, a, DP).
     This corresponds to the sequence of bits (starting from most significant) in `buffer`.
     The value `-1` is also possible here which means that the pin will not be used.
+
 - `scan_rate` : refresh rate of digits in Hz. 
     The digits in display are controlled by impulses of `digits_pins`. 
     This argument sets the time period for display of one digit.
     If `scan_rate=1000` the width will be recalculated as `1/1000 = 1e-3` second or `1e3` microsecond.
     The default value is 800 Hz.
+
 - `inverted_digits` : This option inverts `digit_pins` active states.
+
 - `inverted_sectors` : This option inverts `sectors_pins` active states.
 """
 function DisplayDirect(

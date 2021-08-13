@@ -3,10 +3,32 @@
 Main SPI	9	    10	    11	    8	7	-
 Aux  SPI	19	    20	    21	    18	17	16
 =#
+"""
+    struct DisplaySPI <: AbstractNumDisplay
+        handle::Int
+    end
+"""
 struct DisplaySPI <: AbstractNumDisplay
     handle::Int
 end
 
+"""
+    function DisplaySPI(;
+        spi::Int = 0,
+        channel::Int = 0,
+        boud::Int = 32*10^3
+    )
+
+Creates device that refers to numerical display integrated with SPI chip.
+
+## Arguments
+
+- `spi` : value 0 or 1 to use main or auxilary RaspberryPi's SPI controller. Default is main.
+
+- `channel` : number of CE port: 0, 1 for the main SPI or 0, 1, 2 for the auxilary one. Default is 0.
+
+- `boud` : data transfer rate for SPI, bits per second. Must be from 32kHz to 10MHz.
+"""
 function DisplaySPI(;
     spi::Int = 0,
     channel::Int = 0,
@@ -48,9 +70,8 @@ function spiWrite_bytes(d::DisplaySPI, data::AbstractArray{UInt8})
     nothing
 end
 
-"""
-scan rate = 800 Hz (500-1300) from chip docs
-"""
+
+# scan rate = 800 Hz (500-1300) from chip docs
 scan_rate(::DisplaySPI) = 800
 
 size(d::DisplaySPI) = 8

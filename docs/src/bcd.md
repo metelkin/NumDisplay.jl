@@ -81,6 +81,8 @@ shutdown_mode_on(d)     # display nothing
 
 ![bcd-scheme](./bcd-scheme.png)
 
+![bcd-scheme2](./bcd-scheme2.png)
+
 [![Watch the video](https://img.youtube.com/vi/gWjStU8-2Ug/hqdefault.jpg)](https://youtu.be/gWjStU8-2Ug)
 
 **Notes**
